@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio Version 17
+
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DISTROAR - Standalone Plugin", "DISTROAR_StandalonePlugin.vcxproj", "{E039307B-F8A7-4E86-A070-26DDA8FB114B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9FFDE7FD-12A1-F7F2-BB6E-ED2E2ED04E5C} = {9FFDE7FD-12A1-F7F2-BB6E-ED2E2ED04E5C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DISTROAR - VST3", "DISTROAR_VST3.vcxproj", "{795EE35C-02DA-EBA6-978D-EC6601BAF290}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9FFDE7FD-12A1-F7F2-BB6E-ED2E2ED04E5C} = {9FFDE7FD-12A1-F7F2-BB6E-ED2E2ED04E5C}
+		{15E280B1-F66D-6CBE-4BE5-2910DF5F81F0} = {15E280B1-F66D-6CBE-4BE5-2910DF5F81F0}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DISTROAR - Shared Code", "DISTROAR_SharedCode.vcxproj", "{9FFDE7FD-12A1-F7F2-BB6E-ED2E2ED04E5C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DISTROAR - VST3 Manifest Helper", "DISTROAR_VST3ManifestHelper.vcxproj", "{15E280B1-F66D-6CBE-4BE5-2910DF5F81F0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{795EE35C-02DA-EBA6-978D-EC6601BAF290}.Debug|x64.ActiveCfg = Debug|x64
+		{795EE35C-02DA-EBA6-978D-EC6601BAF290}.Debug|x64.Build.0 = Debug|x64
+		{795EE35C-02DA-EBA6-978D-EC6601BAF290}.Release|x64.ActiveCfg = Release|x64
+		{795EE35C-02DA-EBA6-978D-EC6601BAF290}.Release|x64.Build.0 = Release|x64
+		{E039307B-F8A7-4E86-A070-26DDA8FB114B}.Debug|x64.ActiveCfg = Debug|x64
+		{E039307B-F8A7-4E86-A070-26DDA8FB114B}.Debug|x64.Build.0 = Debug|x64
+		{E039307B-F8A7-4E86-A070-26DDA8FB114B}.Release|x64.ActiveCfg = Release|x64
+		{E039307B-F8A7-4E86-A070-26DDA8FB114B}.Release|x64.Build.0 = Release|x64
+		{9FFDE7FD-12A1-F7F2-BB6E-ED2E2ED04E5C}.Debug|x64.ActiveCfg = Debug|x64
+		{9FFDE7FD-12A1-F7F2-BB6E-ED2E2ED04E5C}.Debug|x64.Build.0 = Debug|x64
+		{9FFDE7FD-12A1-F7F2-BB6E-ED2E2ED04E5C}.Release|x64.ActiveCfg = Release|x64
+		{9FFDE7FD-12A1-F7F2-BB6E-ED2E2ED04E5C}.Release|x64.Build.0 = Release|x64
+		{15E280B1-F66D-6CBE-4BE5-2910DF5F81F0}.Debug|x64.ActiveCfg = Debug|x64
+		{15E280B1-F66D-6CBE-4BE5-2910DF5F81F0}.Debug|x64.Build.0 = Debug|x64
+		{15E280B1-F66D-6CBE-4BE5-2910DF5F81F0}.Release|x64.ActiveCfg = Release|x64
+		{15E280B1-F66D-6CBE-4BE5-2910DF5F81F0}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
