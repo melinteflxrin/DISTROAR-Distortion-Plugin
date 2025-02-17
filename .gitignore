@@ -361,3 +361,15 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# JUCE Build and Exporter Files
+Builds/
+*.jucer.backup
+
+# Compiled Binaries and Intermediates
+*.vst/
+*.vst3/
+*.component/
+*.lv2/
+*.rtas/
+*.aaxplugin/
