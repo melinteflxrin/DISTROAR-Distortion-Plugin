@@ -9,7 +9,7 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     distortionKnob.setSliderStyle(juce::Slider::Rotary);
     distortionKnob.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     distortionKnob.setRange(0.0, 10.0, 0.01);
-    distortionKnob.setValue(audioProcessor.distortionAmount);
+    distortionKnob.setValue(audioProcessor.distortionAmount); // Set knob to default value
     distortionKnob.addListener(this);
     addAndMakeVisible(&distortionKnob);
 

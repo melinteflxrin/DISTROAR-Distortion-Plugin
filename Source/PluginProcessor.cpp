@@ -22,6 +22,7 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
     )
 #endif
 {
+    distortionAmount = 1.0; // Initialize distortion amount
 }
 
 DISTROARAudioProcessor::~DISTROARAudioProcessor()
