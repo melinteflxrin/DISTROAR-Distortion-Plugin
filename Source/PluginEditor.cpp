@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -13,41 +5,38 @@
 DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize(200,400);
+    // Add and configure the distortion knob
+    distortionKnob.setSliderStyle(juce::Slider::Rotary);
+    distortionKnob.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+    distortionKnob.setRange(0.0, 10.0, 0.01);
+    distortionKnob.setValue(audioProcessor.distortionAmount);
+    distortionKnob.addListener(this);
+    addAndMakeVisible(&distortionKnob);
 
-    gainSlider.setSliderStyle(juce::Slider::SliderStyle::LinearVertical);
-    gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 100, 25);
-    gainSlider.setRange(-40.0, 0.0);
-    gainSlider.setValue(-1.0);
-    gainSlider.addListener(this);
-
-    addAndMakeVisible(gainSlider);
+    setSize(400, 300);
 }
 
 DISTROARAudioProcessorEditor::~DISTROARAudioProcessorEditor()
 {
 }
 
-//==============================================================================
 void DISTROARAudioProcessorEditor::paint(juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
-
-    
+    g.fillAll(juce::Colours::black);
+    g.setColour(juce::Colours::white);
+    g.setFont(15.0f);
+    g.drawFittedText("Distortion Plugin", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void DISTROARAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
-    gainSlider.setBounds(getLocalBounds());
+    distortionKnob.setBounds(getWidth() / 2 - 50, getHeight() / 2 - 50, 100, 100);
 }
 
-void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider) {
-    if (slider == &gainSlider) {
-        audioProcessor.rawVolume = pow(10, gainSlider.getValue() / 20);
+void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
+{
+    if (slider == &distortionKnob)
+    {
+        audioProcessor.distortionAmount = distortionKnob.getValue();
     }
 }
