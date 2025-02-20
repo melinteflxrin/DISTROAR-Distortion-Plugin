@@ -57,4 +57,9 @@ public:
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DISTROARAudioProcessor)
+    juce::dsp::LinkwitzRileyFilter<float> lowPassFilter;
+    juce::dsp::LinkwitzRileyFilter<float> highPassFilter;
+    juce::AudioBuffer<float> lowBandBuffer;
+    juce::AudioBuffer<float> midBandBuffer;
+    juce::AudioBuffer<float> highBandBuffer;
 };

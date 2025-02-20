@@ -23,6 +23,10 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
 #endif
 {
     distortionAmount = 1.0; // Initialize distortion amount
+
+    // Initialize crossover filters
+    lowPassFilter.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
+    highPassFilter.setType(juce::dsp::LinkwitzRileyFilterType::highpass);
 }
 
 DISTROARAudioProcessor::~DISTROARAudioProcessor()
@@ -96,6 +100,19 @@ void DISTROARAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+
+    // Prepare crossover filters
+    lowPassFilter.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), 2 });
+    highPassFilter.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), 2 });
+
+    // Set crossover frequencies
+    lowPassFilter.setCutoffFrequency(200.0f); // Low band cutoff frequency
+    highPassFilter.setCutoffFrequency(2000.0f); // High band cutoff frequency
+
+    // Prepare buffers for each band
+    lowBandBuffer.setSize(2, samplesPerBlock);
+    midBandBuffer.setSize(2, samplesPerBlock);
+    highBandBuffer.setSize(2, samplesPerBlock);
 }
 
 void DISTROARAudioProcessor::releaseResources()
@@ -139,17 +156,52 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
+    // Split the input into three bands
+    lowBandBuffer.makeCopyOf(buffer);
+    highBandBuffer.makeCopyOf(buffer);
+
+    juce::dsp::AudioBlock<float> lowBlock(lowBandBuffer);
+    juce::dsp::AudioBlock<float> highBlock(highBandBuffer);
+
+    juce::dsp::ProcessContextReplacing<float> lowContext(lowBlock);
+    juce::dsp::ProcessContextReplacing<float> highContext(highBlock);
+
+    lowPassFilter.process(lowContext);
+    highPassFilter.process(highContext);
+
+    midBandBuffer.makeCopyOf(buffer);
+    midBandBuffer.addFrom(0, 0, lowBandBuffer, 0, 0, buffer.getNumSamples(), -1.0f);
+    midBandBuffer.addFrom(1, 0, lowBandBuffer, 1, 0, buffer.getNumSamples(), -1.0f);
+    midBandBuffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples(), -1.0f);
+    midBandBuffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples(), -1.0f);
+
+    // Apply different distortion algorithms to each band
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        auto* channelData = buffer.getWritePointer(channel);
+        auto* lowBandData = lowBandBuffer.getWritePointer(channel);
+        auto* midBandData = midBandBuffer.getWritePointer(channel);
+        auto* highBandData = highBandBuffer.getWritePointer(channel);
 
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            float cleanSample = channelData[sample];
-            float distortedSample = cleanSample * (1.0f + distortionAmount);
-            channelData[sample] = std::tanh(distortedSample);
+            // Low band: Soft clipping
+            lowBandData[sample] = std::tanh(lowBandData[sample] * (1.0f + distortionAmount));
+
+            // Mid band: Tube-style saturation
+            float midSample = midBandData[sample] * (1.0f + distortionAmount);
+            midBandData[sample] = midSample / (1.0f + std::abs(midSample));
+
+            // High band: Hard clipping
+            highBandData[sample] = juce::jlimit<float>(-1.0f, 1.0f, highBandData[sample] * (1.0f + distortionAmount));
         }
     }
+
+    // Recombine the bands into the final output
+    buffer.makeCopyOf(lowBandBuffer);
+    buffer.addFrom(0, 0, midBandBuffer, 0, 0, buffer.getNumSamples());
+    buffer.addFrom(1, 0, midBandBuffer, 1, 0, buffer.getNumSamples());
+    buffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples());
+    buffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples());
 }
 
 //==============================================================================
