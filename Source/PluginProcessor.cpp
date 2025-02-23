@@ -176,41 +176,59 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     midBandBuffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples(), -1.0f);
     midBandBuffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples(), -1.0f);
 
-    // Apply different distortion algorithms to each band
+    // Apply different distortion algorithms to each band with enhanced low-end and smoother highs
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
         auto* lowBandData = lowBandBuffer.getWritePointer(channel);
         auto* midBandData = midBandBuffer.getWritePointer(channel);
         auto* highBandData = highBandBuffer.getWritePointer(channel);
+        auto* originalData = buffer.getWritePointer(channel); // For clean low-end blend
 
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            float drive = distortionAmount * 5.0f; // Boost drive for heavier distortion
+            float drive = distortionAmount * 7.0f; // Increase drive for stronger distortion
 
-            // === Low Band: Harder Clipping + Slight HPF to Remove Mud ===
-            float lowSample = lowBandData[sample] * (1.0f + drive);
-            lowSample = juce::jlimit<float>(-1.1f, 1.1f, lowSample);  // Harder clip
-            lowSample = std::tanh(lowSample * 2.5f);                  // More aggressive shaping
-            lowSample *= 0.9f; // Reduce bass boominess
+            // === Low Band: Heavy Saturation + Low-end Weight ===
+            float lowSample = lowBandData[sample] * (1.0f + drive * 0.8f);
+            lowSample = std::tanh(lowSample * 4.0f); // Stronger saturation for thickness
+            float cleanLow = originalData[sample] * 0.2f; // Parallel clean blend
+            lowSample = (lowSample * 0.8f) + cleanLow;
+            lowSample *= 1.2f; // Boost low-end power
 
-            // === Mid Band: Tube-Style Saturation + Asymmetry ===
-            float midSample = midBandData[sample] * (1.0f + drive * 0.8f);
+            // === Mid Band: Asymmetric Tube Saturation ===
+            float midSample = midBandData[sample] * (1.0f + drive);
             midSample = (midSample >= 0.0f) ?
                 midSample / (1.0f + std::abs(midSample)) :
-                midSample / (1.0f + std::abs(midSample) * 0.7f); // Asymmetry for amp-like sound
-            midSample = std::tanh(midSample * 3.0f); // Extra saturation
+                midSample / (1.0f + std::abs(midSample) * 0.5f);
+            midSample = std::tanh(midSample * 4.5f); // Richer saturation
 
-            // === High Band: Even Harder Clipping + Presence Boost ===
-            float highSample = highBandData[sample] * (1.0f + drive * 1.5f);
-            highSample = juce::jlimit<float>(-0.9f, 0.9f, highSample); // Aggressive hard clipping
-            highSample = highSample * 1.2f + std::sin(highSample * 2.5f); // Adds high-end crunch
+            // === High Band: Softer Attack + Presence Smoothness ===
+            float highSample = highBandData[sample] * (1.0f + drive * 1.1f);
+            highSample = juce::jlimit<float>(-0.7f, 0.7f, highSample); // Less aggressive clipping
+            highSample = highSample * 1.1f + std::sin(highSample * 2.0f); // Smoother bite
+            highSample = (highSample * 0.8f) + (originalData[sample] * 0.2f); // Subtle blend for attack smoothing
+
+            // === Simple Cabinet Simulation ===
+            float cabSim = (lowSample * 0.65f) + (midSample * 1.0f) + (highSample * 0.75f);
+            cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 5500)->getMagnitudeForFrequency(5500, 44100) * cabSim;
 
             // Assign modified samples back
             lowBandData[sample] = lowSample;
             midBandData[sample] = midSample;
             highBandData[sample] = highSample;
+
+            // Final Output
+            originalData[sample] = (cabSim * 0.92f) + (originalData[sample] * 0.08f); // Subtle dry blend
         }
     }
+
+
+
+
+
+
+
+
 
     // Recombine the bands into the final output
     buffer.makeCopyOf(lowBandBuffer);
