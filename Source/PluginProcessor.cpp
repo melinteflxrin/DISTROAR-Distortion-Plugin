@@ -22,6 +22,7 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
     )
 #endif
 {
+    addParameter(volumeParameter = new juce::AudioParameterFloat("volume", "Volume", 0.0f, 1.0f, 0.5f));
     distortionAmount = 1.0; // Initialize distortion amount
 
     // Initialize crossover filters
@@ -184,15 +185,30 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            // Low band: Soft clipping
-            lowBandData[sample] = std::tanh(lowBandData[sample] * (1.0f + distortionAmount));
+            float drive = distortionAmount * 5.0f; // Boost drive for heavier distortion
 
-            // Mid band: Tube-style saturation
-            float midSample = midBandData[sample] * (1.0f + distortionAmount);
-            midBandData[sample] = midSample / (1.0f + std::abs(midSample));
+            // === Low Band: Harder Clipping + Slight HPF to Remove Mud ===
+            float lowSample = lowBandData[sample] * (1.0f + drive);
+            lowSample = juce::jlimit<float>(-1.1f, 1.1f, lowSample);  // Harder clip
+            lowSample = std::tanh(lowSample * 2.5f);                  // More aggressive shaping
+            lowSample *= 0.9f; // Reduce bass boominess
 
-            // High band: Hard clipping
-            highBandData[sample] = juce::jlimit<float>(-1.0f, 1.0f, highBandData[sample] * (1.0f + distortionAmount));
+            // === Mid Band: Tube-Style Saturation + Asymmetry ===
+            float midSample = midBandData[sample] * (1.0f + drive * 0.8f);
+            midSample = (midSample >= 0.0f) ?
+                midSample / (1.0f + std::abs(midSample)) :
+                midSample / (1.0f + std::abs(midSample) * 0.7f); // Asymmetry for amp-like sound
+            midSample = std::tanh(midSample * 3.0f); // Extra saturation
+
+            // === High Band: Even Harder Clipping + Presence Boost ===
+            float highSample = highBandData[sample] * (1.0f + drive * 1.5f);
+            highSample = juce::jlimit<float>(-0.9f, 0.9f, highSample); // Aggressive hard clipping
+            highSample = highSample * 1.2f + std::sin(highSample * 2.5f); // Adds high-end crunch
+
+            // Assign modified samples back
+            lowBandData[sample] = lowSample;
+            midBandData[sample] = midSample;
+            highBandData[sample] = highSample;
         }
     }
 
@@ -202,6 +218,13 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     buffer.addFrom(1, 0, midBandBuffer, 1, 0, buffer.getNumSamples());
     buffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples());
     buffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples());
+
+    // Apply volume control
+    float volume = *volumeParameter;
+    for (int channel = 0; channel < totalNumOutputChannels; ++channel)
+    {
+        buffer.applyGain(channel, 0, buffer.getNumSamples(), volume);
+    }
 }
 
 //==============================================================================

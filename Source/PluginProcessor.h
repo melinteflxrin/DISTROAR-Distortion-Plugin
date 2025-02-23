@@ -54,10 +54,11 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     double distortionAmount;
+    juce::AudioParameterFloat* volumeParameter;
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DISTROARAudioProcessor)
-    juce::dsp::LinkwitzRileyFilter<float> lowPassFilter;
+        juce::dsp::LinkwitzRileyFilter<float> lowPassFilter;
     juce::dsp::LinkwitzRileyFilter<float> highPassFilter;
     juce::AudioBuffer<float> lowBandBuffer;
     juce::AudioBuffer<float> midBandBuffer;
