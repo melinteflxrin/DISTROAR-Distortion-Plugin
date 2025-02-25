@@ -182,45 +182,54 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         auto* lowBandData = lowBandBuffer.getWritePointer(channel);
         auto* midBandData = midBandBuffer.getWritePointer(channel);
         auto* highBandData = highBandBuffer.getWritePointer(channel);
-        auto* originalData = buffer.getWritePointer(channel); // For clean low-end blend
+        auto* originalData = buffer.getWritePointer(channel);
 
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            float drive = distortionAmount * 7.0f; // Increase drive for stronger distortion
+            float drive = distortionAmount * 7.5f;
+            float inputSample = originalData[sample];
 
-            // === Low Band: Heavy Saturation + Low-end Weight ===
-            float lowSample = lowBandData[sample] * (1.0f + drive * 0.8f);
-            lowSample = std::tanh(lowSample * 4.0f); // Stronger saturation for thickness
-            float cleanLow = originalData[sample] * 0.2f; // Parallel clean blend
-            lowSample = (lowSample * 0.8f) + cleanLow;
-            lowSample *= 1.2f; // Boost low-end power
+            float lowBoost = inputSample * 1.15f;
+            float lowCut = (std::abs(inputSample) > 40.0f / 44100.0f) ? lowBoost : 0.0f;
 
-            // === Mid Band: Asymmetric Tube Saturation ===
-            float midSample = midBandData[sample] * (1.0f + drive);
-            midSample = (midSample >= 0.0f) ?
-                midSample / (1.0f + std::abs(midSample)) :
-                midSample / (1.0f + std::abs(midSample) * 0.5f);
-            midSample = std::tanh(midSample * 4.5f); // Richer saturation
+            // === Input Level Normalization for Consistency ===
+            float inputGainComp = 1.0f + (0.8f / (0.2f + std::abs(inputSample))); // Keeps levels even
+            float adaptiveDrive = drive * inputGainComp; // Adjust drive dynamically
 
-            // === High Band: Softer Attack + Presence Smoothness ===
-            float highSample = highBandData[sample] * (1.0f + drive * 1.1f);
-            highSample = juce::jlimit<float>(-0.7f, 0.7f, highSample); // Less aggressive clipping
-            highSample = highSample * 1.1f + std::sin(highSample * 2.0f); // Smoother bite
-            highSample = (highSample * 0.8f) + (originalData[sample] * 0.2f); // Subtle blend for attack smoothing
+            // === Low Band: Stronger saturation, no clean blend ===
+            float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.9f);
+            lowSample = std::tanh(lowSample * 5.0f);
+            lowSample *= 1.35f;
 
-            // === Simple Cabinet Simulation ===
-            float cabSim = (lowSample * 0.65f) + (midSample * 1.0f) + (highSample * 0.75f);
-            cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 5500)->getMagnitudeForFrequency(5500, 44100) * cabSim;
+            // === Mid Band: Richer saturation & compression for glue ===
+            float midSample = midBandData[sample] * (1.0f + adaptiveDrive * 1.1f);
+            midSample = midSample / (1.0f + std::abs(midSample) * 0.6f);
+            midSample = std::tanh(midSample * 5.0f);
+            midSample *= 1.05f;
+
+            // === High Band: Softer presence, reduced harshness ===
+            float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 1.0f);
+            highSample = juce::jlimit<float>(-0.5f, 0.5f, highSample);
+            highSample = highSample * 0.9f + std::sin(highSample * 1.6f);
+            highSample = (highSample * 0.75f) + (originalData[sample] * 0.25f);
+
+            // === Cabinet Simulation: Low-pass + Resonance for glue ===
+            float cabSim = (lowSample * 0.9f) + (midSample * 1.1f) + (highSample * 0.8f);
+            cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 4500)->getMagnitudeForFrequency(4500, 44100) * cabSim;
+            cabSim = std::tanh(cabSim * 1.3f);
 
             // Assign modified samples back
             lowBandData[sample] = lowSample;
             midBandData[sample] = midSample;
             highBandData[sample] = highSample;
-
-            // Final Output
-            originalData[sample] = (cabSim * 0.92f) + (originalData[sample] * 0.08f); // Subtle dry blend
+            originalData[sample] = (cabSim * 0.95f) + (originalData[sample] * 0.05f);
         }
     }
+
+
+
+
+
 
 
 
