@@ -1,15 +1,20 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "CustomLookAndFeel.h"
 
 //==============================================================================
 DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
+    // Load background image
+    backgroundImage = juce::ImageCache::getFromMemory(BinaryData::distroarBackground_png, BinaryData::distroarBackground_pngSize);
+
     // Volume Slider
     volumeSlider.setSliderStyle(juce::Slider::Rotary);
     volumeSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     volumeSlider.setRange(0.0, 1.0, 0.01);
     volumeSlider.setValue(*audioProcessor.volumeParameter);
+    volumeSlider.setLookAndFeel(&customLookAndFeel);
     volumeSlider.addListener(this);
     addAndMakeVisible(&volumeSlider);
 
@@ -23,6 +28,7 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     distortionSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     distortionSlider.setRange(0.0, 1.0, 0.01);
     distortionSlider.setValue(audioProcessor.distortionAmount);
+    distortionSlider.setLookAndFeel(&customLookAndFeel);
     distortionSlider.addListener(this);
     addAndMakeVisible(&distortionSlider);
 
@@ -36,6 +42,7 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     blendSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     blendSlider.setRange(0.0, 1.0, 0.01);
     blendSlider.setValue(*audioProcessor.blendParameter);
+    blendSlider.setLookAndFeel(&customLookAndFeel);
     blendSlider.addListener(this);
     addAndMakeVisible(&blendSlider);
 
@@ -44,16 +51,19 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     blendLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(&blendLabel);
 
-    setSize(400, 300);
+    setSize(300, 450);
 }
 
 DISTROARAudioProcessorEditor::~DISTROARAudioProcessorEditor()
 {
+    volumeSlider.setLookAndFeel(nullptr);
+    distortionSlider.setLookAndFeel(nullptr);
+    blendSlider.setLookAndFeel(nullptr);
 }
 
 void DISTROARAudioProcessorEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
+    g.drawImageAt(backgroundImage, 0, 0);
 }
 
 void DISTROARAudioProcessorEditor::resized()
@@ -69,8 +79,8 @@ void DISTROARAudioProcessorEditor::resized()
     distortionSlider.setBounds(padding + sliderWidth + padding, padding, sliderWidth, sliderHeight);
     distortionLabel.setBounds(padding + sliderWidth + padding, padding + sliderHeight, sliderWidth, labelHeight);
 
-    blendSlider.setBounds(padding + 2 * (sliderWidth + padding), padding, sliderWidth, sliderHeight);
-    blendLabel.setBounds(padding + 2 * (sliderWidth + padding), padding + sliderHeight, sliderWidth, labelHeight);
+    blendSlider.setBounds(padding, padding + sliderHeight + labelHeight + padding, sliderWidth, sliderHeight);
+    blendLabel.setBounds(padding, padding + 2 * (sliderHeight + labelHeight) + padding, sliderWidth, labelHeight);
 }
 
 void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)

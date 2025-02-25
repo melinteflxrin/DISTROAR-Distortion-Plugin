@@ -2,10 +2,9 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "CustomLookAndFeel.h"
 
 //==============================================================================
-/**
-*/
 class DISTROARAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Slider::Listener
 {
 public:
@@ -17,8 +16,6 @@ public:
     void resized() override;
 
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
     DISTROARAudioProcessor& audioProcessor;
 
     juce::Slider volumeSlider;
@@ -29,6 +26,12 @@ private:
 
     juce::Slider blendSlider;
     juce::Label blendLabel;
+
+    // Custom LookAndFeel
+    CustomLookAndFeel customLookAndFeel;
+
+    // Background image
+    juce::Image backgroundImage;
 
     void sliderValueChanged(juce::Slider* slider) override;
 
