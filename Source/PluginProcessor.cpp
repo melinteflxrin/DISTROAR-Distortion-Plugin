@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -24,6 +16,8 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
 {
     addParameter(volumeParameter = new juce::AudioParameterFloat("volume", "Volume", 0.0f, 1.0f, 0.5f));
     addParameter(blendParameter = new juce::AudioParameterFloat("blend", "Blend", 0.0f, 1.0f, 0.5f));
+    addParameter(driveParameter = new juce::AudioParameterFloat("drive", "Drive", 0.0f, 1.0f, 0.5f)); // Initialize drive parameter
+
     distortionAmount = 1.0; // Initialize distortion amount
 
     // Initialize crossover filters
@@ -191,7 +185,7 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            float drive = distortionAmount * 7.5f;
+            float drive = *driveParameter * 7.5f; // Use drive parameter
             float inputSample = originalData[sample];
 
             float lowBoost = inputSample * 1.15f;
@@ -230,10 +224,6 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
             originalData[sample] = (cabSim * 0.95f) + (originalData[sample] * 0.05f);
         }
     }
-
-
-
-
 
     // Recombine the bands into the final output
     buffer.makeCopyOf(lowBandBuffer);

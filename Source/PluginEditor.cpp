@@ -16,6 +16,7 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     volumeSlider.setValue(*audioProcessor.volumeParameter);
     volumeSlider.setLookAndFeel(&customLookAndFeel);
     volumeSlider.addListener(this);
+    volumeSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
     addAndMakeVisible(&volumeSlider);
 
     // Volume Label
@@ -27,9 +28,10 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     distortionSlider.setSliderStyle(juce::Slider::Rotary);
     distortionSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     distortionSlider.setRange(0.0, 1.0, 0.01);
-    distortionSlider.setValue(audioProcessor.distortionAmount);
+    distortionSlider.setValue(*audioProcessor.driveParameter); // Use drive parameter
     distortionSlider.setLookAndFeel(&customLookAndFeel);
     distortionSlider.addListener(this);
+    distortionSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
     addAndMakeVisible(&distortionSlider);
 
     // Distortion Label
@@ -44,6 +46,7 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     blendSlider.setValue(*audioProcessor.blendParameter);
     blendSlider.setLookAndFeel(&customLookAndFeel);
     blendSlider.addListener(this);
+    blendSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
     addAndMakeVisible(&blendSlider);
 
     // Blend Label
@@ -91,7 +94,7 @@ void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     }
     else if (slider == &distortionSlider)
     {
-        audioProcessor.distortionAmount = (float)slider->getValue();
+        *audioProcessor.driveParameter = (float)slider->getValue(); // Use drive parameter
     }
     else if (slider == &blendSlider)
     {

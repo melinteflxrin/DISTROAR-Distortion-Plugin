@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 #include <JuceHeader.h>
@@ -56,6 +48,8 @@ public:
     double distortionAmount;
     juce::AudioParameterFloat* volumeParameter;
     juce::AudioParameterFloat* blendParameter;
+    juce::AudioParameterFloat* driveParameter; // Add drive parameter
+
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DISTROARAudioProcessor)

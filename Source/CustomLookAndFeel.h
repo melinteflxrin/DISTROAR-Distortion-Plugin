@@ -21,17 +21,12 @@ public:
         const float ry = centerY - radius;
         const float rw = radius * 2.0f;
 
-        g.drawImage(knobImage, rx, ry, rw, rw, 0, 0, knobImage.getWidth(), knobImage.getHeight());
-
         const float angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
-        juce::Path p;
-        const float pointerLength = radius * 0.33f;
-        const float pointerThickness = 2.0f;
-        p.addRectangle(-pointerThickness * 0.5f, -radius, pointerThickness, pointerLength);
-        p.applyTransform(juce::AffineTransform::rotation(angle).translated(centerX, centerY));
 
-        g.setColour(juce::Colours::black);
-        g.fillPath(p);
+        g.saveState();
+        g.addTransform(juce::AffineTransform::rotation(angle, centerX, centerY));
+        g.drawImage(knobImage, rx, ry, rw, rw, 0, 0, knobImage.getWidth(), knobImage.getHeight());
+        g.restoreState();
     }
 
 private:
