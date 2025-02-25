@@ -23,6 +23,7 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
 #endif
 {
     addParameter(volumeParameter = new juce::AudioParameterFloat("volume", "Volume", 0.0f, 1.0f, 0.5f));
+    addParameter(blendParameter = new juce::AudioParameterFloat("blend", "Blend", 0.0f, 1.0f, 0.5f));
     distortionAmount = 1.0; // Initialize distortion amount
 
     // Initialize crossover filters
@@ -157,6 +158,10 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
+    // Store the clean signal
+    juce::AudioBuffer<float> cleanBuffer;
+    cleanBuffer.makeCopyOf(buffer);
+
     // Split the input into three bands
     lowBandBuffer.makeCopyOf(buffer);
     highBandBuffer.makeCopyOf(buffer);
@@ -230,21 +235,24 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
 
 
-
-
-
-
-
-
-
-
-
     // Recombine the bands into the final output
     buffer.makeCopyOf(lowBandBuffer);
     buffer.addFrom(0, 0, midBandBuffer, 0, 0, buffer.getNumSamples());
     buffer.addFrom(1, 0, midBandBuffer, 1, 0, buffer.getNumSamples());
     buffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples());
     buffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples());
+
+    // Mix the clean and distorted signals based on the blend parameter
+    float blend = blendParameter->get();
+    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    {
+        auto* cleanData = cleanBuffer.getReadPointer(channel);
+        auto* distortedData = buffer.getWritePointer(channel);
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        {
+            distortedData[sample] = (1.0f - blend) * cleanData[sample] + blend * distortedData[sample];
+        }
+    }
 
     // Apply volume control
     float volume = *volumeParameter;

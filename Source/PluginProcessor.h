@@ -55,6 +55,7 @@ public:
 
     double distortionAmount;
     juce::AudioParameterFloat* volumeParameter;
+    juce::AudioParameterFloat* blendParameter;
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DISTROARAudioProcessor)

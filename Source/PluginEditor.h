@@ -12,18 +12,25 @@ public:
     DISTROARAudioProcessorEditor(DISTROARAudioProcessor&);
     ~DISTROARAudioProcessorEditor() override;
 
+    //==============================================================================
     void paint(juce::Graphics&) override;
     void resized() override;
 
 private:
-    void sliderValueChanged(juce::Slider* slider) override;
-
+    // This reference is provided as a quick way for your editor to
+    // access the processor object that created it.
     DISTROARAudioProcessor& audioProcessor;
 
     juce::Slider volumeSlider;
-    juce::Slider distortionSlider;
     juce::Label volumeLabel;
+
+    juce::Slider distortionSlider;
     juce::Label distortionLabel;
+
+    juce::Slider blendSlider;
+    juce::Label blendLabel;
+
+    void sliderValueChanged(juce::Slider* slider) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DISTROARAudioProcessorEditor)
 };

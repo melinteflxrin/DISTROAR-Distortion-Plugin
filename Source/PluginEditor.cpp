@@ -31,6 +31,19 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     distortionLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(&distortionLabel);
 
+    // Blend Slider
+    blendSlider.setSliderStyle(juce::Slider::Rotary);
+    blendSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    blendSlider.setRange(0.0, 1.0, 0.01);
+    blendSlider.setValue(*audioProcessor.blendParameter);
+    blendSlider.addListener(this);
+    addAndMakeVisible(&blendSlider);
+
+    // Blend Label
+    blendLabel.setText("Blend", juce::dontSendNotification);
+    blendLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(&blendLabel);
+
     setSize(400, 300);
 }
 
@@ -55,6 +68,9 @@ void DISTROARAudioProcessorEditor::resized()
 
     distortionSlider.setBounds(padding + sliderWidth + padding, padding, sliderWidth, sliderHeight);
     distortionLabel.setBounds(padding + sliderWidth + padding, padding + sliderHeight, sliderWidth, labelHeight);
+
+    blendSlider.setBounds(padding + 2 * (sliderWidth + padding), padding, sliderWidth, sliderHeight);
+    blendLabel.setBounds(padding + 2 * (sliderWidth + padding), padding + sliderHeight, sliderWidth, labelHeight);
 }
 
 void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
@@ -66,5 +82,9 @@ void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     else if (slider == &distortionSlider)
     {
         audioProcessor.distortionAmount = (float)slider->getValue();
+    }
+    else if (slider == &blendSlider)
+    {
+        *audioProcessor.blendParameter = (float)slider->getValue();
     }
 }
