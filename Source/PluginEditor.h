@@ -26,6 +26,7 @@ private:
 
     CustomLookAndFeel customLookAndFeel;
     juce::Image backgroundImage;
+    juce::Point<int> initialMousePosition;
 
     DISTROARAudioProcessor& audioProcessor;
 

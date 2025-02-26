@@ -112,6 +112,9 @@ void DISTROARAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
 {
     if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider)
     {
+        // Store the initial mouse position
+        initialMousePosition = event.getScreenPosition();
+
         // Change the mouse cursor to a blank cursor to lock the mouse in place
         juce::MouseCursor::showWaitCursor();
         // Lock the mouse position
@@ -127,5 +130,8 @@ void DISTROARAudioProcessorEditor::mouseUp(const juce::MouseEvent& event)
         juce::MouseCursor::hideWaitCursor();
         // Unlock the mouse position
         juce::Desktop::getInstance().getMainMouseSource().enableUnboundedMouseMovement(false);
+
+        // Restore the initial mouse position
+        juce::Desktop::getInstance().getMainMouseSource().setScreenPosition(initialMousePosition.toFloat());
     }
 }
