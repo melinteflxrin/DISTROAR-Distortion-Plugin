@@ -1,39 +1,33 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "PluginProcessor.h"
 #include "CustomLookAndFeel.h"
 
-//==============================================================================
-class DISTROARAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Slider::Listener
+class DISTROARAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Slider::Listener, private juce::MouseListener
 {
 public:
     DISTROARAudioProcessorEditor(DISTROARAudioProcessor&);
     ~DISTROARAudioProcessorEditor() override;
 
-    //==============================================================================
     void paint(juce::Graphics&) override;
     void resized() override;
 
 private:
-    DISTROARAudioProcessor& audioProcessor;
+    void sliderValueChanged(juce::Slider* slider) override;
+    void mouseDown(const juce::MouseEvent& event) override;
+    void mouseUp(const juce::MouseEvent& event) override;
 
     juce::Slider volumeSlider;
     juce::Label volumeLabel;
-
     juce::Slider distortionSlider;
     juce::Label distortionLabel;
-
     juce::Slider blendSlider;
     juce::Label blendLabel;
 
-    // Custom LookAndFeel
     CustomLookAndFeel customLookAndFeel;
-
-    // Background image
     juce::Image backgroundImage;
 
-    void sliderValueChanged(juce::Slider* slider) override;
+    DISTROARAudioProcessor& audioProcessor;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DISTROARAudioProcessorEditor)
 };

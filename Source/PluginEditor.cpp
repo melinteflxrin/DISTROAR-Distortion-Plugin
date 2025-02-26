@@ -10,13 +10,15 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     backgroundImage = juce::ImageCache::getFromMemory(BinaryData::distroarBackground_png, BinaryData::distroarBackground_pngSize);
 
     // Volume Slider
-    volumeSlider.setSliderStyle(juce::Slider::Rotary);
+    volumeSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     volumeSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     volumeSlider.setRange(0.0, 1.0, 0.01);
     volumeSlider.setValue(*audioProcessor.volumeParameter);
     volumeSlider.setLookAndFeel(&customLookAndFeel);
     volumeSlider.addListener(this);
+    volumeSlider.addMouseListener(this, false);
     volumeSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
+    volumeSlider.setMouseDragSensitivity(300); // Increase sensitivity
     addAndMakeVisible(&volumeSlider);
 
     // Volume Label
@@ -25,13 +27,15 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     addAndMakeVisible(&volumeLabel);
 
     // Distortion Slider
-    distortionSlider.setSliderStyle(juce::Slider::Rotary);
+    distortionSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     distortionSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     distortionSlider.setRange(0.0, 1.0, 0.01);
     distortionSlider.setValue(*audioProcessor.driveParameter); // Use drive parameter
     distortionSlider.setLookAndFeel(&customLookAndFeel);
     distortionSlider.addListener(this);
+    distortionSlider.addMouseListener(this, false);
     distortionSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
+    distortionSlider.setMouseDragSensitivity(300); // Increase sensitivity
     addAndMakeVisible(&distortionSlider);
 
     // Distortion Label
@@ -40,13 +44,15 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     addAndMakeVisible(&distortionLabel);
 
     // Blend Slider
-    blendSlider.setSliderStyle(juce::Slider::Rotary);
+    blendSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     blendSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     blendSlider.setRange(0.0, 1.0, 0.01);
     blendSlider.setValue(*audioProcessor.blendParameter);
     blendSlider.setLookAndFeel(&customLookAndFeel);
     blendSlider.addListener(this);
+    blendSlider.addMouseListener(this, false);
     blendSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
+    blendSlider.setMouseDragSensitivity(300); // Increase sensitivity
     addAndMakeVisible(&blendSlider);
 
     // Blend Label
@@ -99,5 +105,27 @@ void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     else if (slider == &blendSlider)
     {
         *audioProcessor.blendParameter = (float)slider->getValue();
+    }
+}
+
+void DISTROARAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
+{
+    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider)
+    {
+        // Change the mouse cursor to a blank cursor to lock the mouse in place
+        juce::MouseCursor::showWaitCursor();
+        // Lock the mouse position
+        juce::Desktop::getInstance().getMainMouseSource().enableUnboundedMouseMovement(true);
+    }
+}
+
+void DISTROARAudioProcessorEditor::mouseUp(const juce::MouseEvent& event)
+{
+    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider)
+    {
+        // Restore the default mouse cursor
+        juce::MouseCursor::hideWaitCursor();
+        // Unlock the mouse position
+        juce::Desktop::getInstance().getMainMouseSource().enableUnboundedMouseMovement(false);
     }
 }
