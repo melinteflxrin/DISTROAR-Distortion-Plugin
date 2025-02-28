@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "BinaryData.h" // Include the BinaryData header
+#include "BinaryData.h" 
 
 class CustomLookAndFeel : public juce::LookAndFeel_V4
 {

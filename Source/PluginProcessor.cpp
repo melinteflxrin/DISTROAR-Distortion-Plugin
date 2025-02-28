@@ -19,7 +19,6 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
     addParameter(driveParameter = new juce::AudioParameterFloat("drive", "Drive", 0.0f, 1.0f, 0.5f)); 
     addParameter(toneParameter = new juce::AudioParameterFloat("tone", "Tone", 600.0f, 20000.0f, 10300.0f));
 
-    distortionAmount = 1.0; // Initialize distortion amount
 
     // Initialize crossover filters
     lowPassFilter.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
@@ -188,7 +187,7 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         midBandBuffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples(), -1.0f);
         midBandBuffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples(), -1.0f);
 
-        // Apply different distortion algorithms to each band with enhanced low-end and smoother highs
+        // Apply different distortion algorithms to each band 
         for (int channel = 0; channel < totalNumInputChannels; ++channel)
         {
             auto* lowBandData = lowBandBuffer.getWritePointer(channel);

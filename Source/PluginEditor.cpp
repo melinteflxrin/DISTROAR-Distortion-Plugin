@@ -46,12 +46,12 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     distortionSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     distortionSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     distortionSlider.setRange(0.0, 1.0, 0.01);
-    distortionSlider.setValue(*audioProcessor.driveParameter); // Use drive parameter
+    distortionSlider.setValue(*audioProcessor.driveParameter); 
     distortionSlider.setLookAndFeel(&customLookAndFeel);
     distortionSlider.addListener(this);
     distortionSlider.addMouseListener(this, false);
     distortionSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
-    distortionSlider.setMouseDragSensitivity(300); // Increase sensitivity
+    distortionSlider.setMouseDragSensitivity(300); 
     addAndMakeVisible(&distortionSlider);
 
     // Distortion Label
@@ -68,7 +68,7 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     blendSlider.addListener(this);
     blendSlider.addMouseListener(this, false);
     blendSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
-    blendSlider.setMouseDragSensitivity(300); // Increase sensitivity
+    blendSlider.setMouseDragSensitivity(300); 
     addAndMakeVisible(&blendSlider);
 
     // Blend Label
@@ -85,7 +85,7 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     toneSlider.addListener(this);
     toneSlider.addMouseListener(this, false);
     toneSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
-    toneSlider.setMouseDragSensitivity(300); // Increase sensitivity
+    toneSlider.setMouseDragSensitivity(300); 
     addAndMakeVisible(&toneSlider);
 
     // Tone Label
@@ -140,7 +140,7 @@ void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     }
     else if (slider == &distortionSlider)
     {
-        *audioProcessor.driveParameter = (float)slider->getValue(); // Use drive parameter
+        *audioProcessor.driveParameter = (float)slider->getValue(); 
     }
     else if (slider == &blendSlider)
     {
