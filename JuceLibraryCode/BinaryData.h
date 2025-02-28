@@ -8,6 +8,12 @@
 
 namespace BinaryData
 {
+    extern const char*   distroarON_png;
+    const int            distroarON_pngSize = 3889;
+
+    extern const char*   distroarOFF_png;
+    const int            distroarOFF_pngSize = 3666;
+
     extern const char*   distroarKnob_png;
     const int            distroarKnob_pngSize = 4022;
 
@@ -15,7 +21,7 @@ namespace BinaryData
     const int            distroarBackground_pngSize = 14361;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 2;
+    const int namedResourceListSize = 4;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

@@ -9,6 +9,22 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     // Load background image
     backgroundImage = juce::ImageCache::getFromMemory(BinaryData::distroarBackground_png, BinaryData::distroarBackground_pngSize);
 
+    // Load images for the button states
+    buttonOnImage = juce::ImageFileFormat::loadFrom(BinaryData::distroarON_png, BinaryData::distroarON_pngSize);
+    buttonOffImage = juce::ImageFileFormat::loadFrom(BinaryData::distroarOFF_png, BinaryData::distroarOFF_pngSize);
+
+    // Set initial images to the toggleButton based on effectEnabled state
+    toggleButton.setImages(false, true, true,
+        effectEnabled ? buttonOnImage : buttonOffImage, 1.0f, juce::Colours::transparentBlack,
+        effectEnabled ? buttonOnImage : buttonOffImage, 1.0f, juce::Colours::transparentBlack,
+        effectEnabled ? buttonOnImage : buttonOffImage, 1.0f, juce::Colours::transparentBlack);
+
+    addAndMakeVisible(toggleButton);
+    toggleButton.addListener(this);
+
+    // Set initial bounds for the toggleButton
+    toggleButton.setBounds(120, 240, 100, 100);
+
     // Volume Slider
     volumeSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     volumeSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
@@ -60,11 +76,6 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     blendLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(&blendLabel);
 
-    // Toggle Button
-    toggleButton.setButtonText("ON");
-    toggleButton.addListener(this);
-    addAndMakeVisible(&toggleButton);
-
     setSize(300, 450);
 }
 
@@ -97,7 +108,7 @@ void DISTROARAudioProcessorEditor::resized()
     blendSlider.setBounds(padding, padding + sliderHeight + labelHeight + padding, sliderWidth, sliderHeight);
     blendLabel.setBounds(padding, padding + 2 * (sliderHeight + labelHeight) + padding, sliderWidth, labelHeight);
 
-    toggleButton.setBounds(padding + sliderWidth + padding, padding + sliderHeight + labelHeight + padding, 100, 30);
+    toggleButton.setBounds(padding + sliderWidth + padding, padding + sliderHeight + labelHeight + padding, 100, 100);
 }
 
 void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
@@ -123,8 +134,11 @@ void DISTROARAudioProcessorEditor::buttonClicked(juce::Button* button)
         // Toggle the effect state
         effectEnabled = !effectEnabled;
 
-        // Update the button text based on the effect state
-        toggleButton.setButtonText(effectEnabled ? "ON" : "OFF");
+        // Update the button images based on the effect state
+        toggleButton.setImages(false, true, true,
+            effectEnabled ? buttonOnImage : buttonOffImage, 1.0f, juce::Colours::transparentBlack,
+            effectEnabled ? buttonOnImage : buttonOffImage, 1.0f, juce::Colours::transparentBlack,
+            effectEnabled ? buttonOnImage : buttonOffImage, 1.0f, juce::Colours::transparentBlack);
 
         audioProcessor.setEffectEnabled(effectEnabled);
     }

@@ -25,11 +25,13 @@ private:
     juce::Slider blendSlider;
     juce::Label blendLabel;
 
-    juce::TextButton toggleButton;
+    juce::ImageButton toggleButton;
     bool effectEnabled;
 
     CustomLookAndFeel customLookAndFeel;
     juce::Image backgroundImage;
+    juce::Image buttonOnImage; 
+    juce::Image buttonOffImage; 
     juce::Point<int> initialMousePosition;
 
     DISTROARAudioProcessor& audioProcessor;
