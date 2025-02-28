@@ -79,7 +79,7 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     // Tone Slider
     toneSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     toneSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    toneSlider.setRange(20.0, 20000.0, 1.0);
+    toneSlider.setRange(600.0, 20000.0, 25.0);
     toneSlider.setValue(*audioProcessor.toneParameter);
     toneSlider.setLookAndFeel(&customLookAndFeel);
     toneSlider.addListener(this);

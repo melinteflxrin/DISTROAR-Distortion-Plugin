@@ -17,7 +17,7 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
     addParameter(volumeParameter = new juce::AudioParameterFloat("volume", "Volume", 0.0f, 1.0f, 0.5f));
     addParameter(blendParameter = new juce::AudioParameterFloat("blend", "Blend", 0.0f, 1.0f, 0.5f));
     addParameter(driveParameter = new juce::AudioParameterFloat("drive", "Drive", 0.0f, 1.0f, 0.5f)); 
-    addParameter(toneParameter = new juce::AudioParameterFloat("tone", "Tone", 20.0f, 20000.0f, 20000.0f));
+    addParameter(toneParameter = new juce::AudioParameterFloat("tone", "Tone", 600.0f, 20000.0f, 10300.0f));
 
     distortionAmount = 1.0; // Initialize distortion amount
 
