@@ -4,7 +4,7 @@
 
 //==============================================================================
 DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p)
+    : AudioProcessorEditor(&p), audioProcessor(p), effectEnabled(true) // Initialize effectEnabled
 {
     // Load background image
     backgroundImage = juce::ImageCache::getFromMemory(BinaryData::distroarBackground_png, BinaryData::distroarBackground_pngSize);
@@ -60,6 +60,11 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     blendLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(&blendLabel);
 
+    // Toggle Button
+    toggleButton.setButtonText("ON");
+    toggleButton.addListener(this);
+    addAndMakeVisible(&toggleButton);
+
     setSize(300, 450);
 }
 
@@ -68,6 +73,7 @@ DISTROARAudioProcessorEditor::~DISTROARAudioProcessorEditor()
     volumeSlider.setLookAndFeel(nullptr);
     distortionSlider.setLookAndFeel(nullptr);
     blendSlider.setLookAndFeel(nullptr);
+    toggleButton.removeListener(this);
 }
 
 void DISTROARAudioProcessorEditor::paint(juce::Graphics& g)
@@ -90,6 +96,8 @@ void DISTROARAudioProcessorEditor::resized()
 
     blendSlider.setBounds(padding, padding + sliderHeight + labelHeight + padding, sliderWidth, sliderHeight);
     blendLabel.setBounds(padding, padding + 2 * (sliderHeight + labelHeight) + padding, sliderWidth, labelHeight);
+
+    toggleButton.setBounds(padding + sliderWidth + padding, padding + sliderHeight + labelHeight + padding, 100, 30);
 }
 
 void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
@@ -105,6 +113,20 @@ void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     else if (slider == &blendSlider)
     {
         *audioProcessor.blendParameter = (float)slider->getValue();
+    }
+}
+
+void DISTROARAudioProcessorEditor::buttonClicked(juce::Button* button)
+{
+    if (button == &toggleButton)
+    {
+        // Toggle the effect state
+        effectEnabled = !effectEnabled;
+
+        // Update the button text based on the effect state
+        toggleButton.setButtonText(effectEnabled ? "ON" : "OFF");
+
+        audioProcessor.setEffectEnabled(effectEnabled);
     }
 }
 

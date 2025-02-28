@@ -143,6 +143,11 @@ bool DISTROARAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) 
 }
 #endif
 
+void DISTROARAudioProcessor::setEffectEnabled(bool enabled)
+{
+    effectEnabled = enabled;
+}
+
 void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -152,103 +157,108 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
-    // Store the clean signal
-    juce::AudioBuffer<float> cleanBuffer;
-    cleanBuffer.makeCopyOf(buffer);
+    if (effectEnabled) {
+        // Store the clean signal
+        juce::AudioBuffer<float> cleanBuffer;
+        cleanBuffer.makeCopyOf(buffer);
 
-    // Split the input into three bands
-    lowBandBuffer.makeCopyOf(buffer);
-    highBandBuffer.makeCopyOf(buffer);
+        // Split the input into three bands
+        lowBandBuffer.makeCopyOf(buffer);
+        highBandBuffer.makeCopyOf(buffer);
 
-    juce::dsp::AudioBlock<float> lowBlock(lowBandBuffer);
-    juce::dsp::AudioBlock<float> highBlock(highBandBuffer);
+        juce::dsp::AudioBlock<float> lowBlock(lowBandBuffer);
+        juce::dsp::AudioBlock<float> highBlock(highBandBuffer);
 
-    juce::dsp::ProcessContextReplacing<float> lowContext(lowBlock);
-    juce::dsp::ProcessContextReplacing<float> highContext(highBlock);
+        juce::dsp::ProcessContextReplacing<float> lowContext(lowBlock);
+        juce::dsp::ProcessContextReplacing<float> highContext(highBlock);
 
-    lowPassFilter.process(lowContext);
-    highPassFilter.process(highContext);
+        lowPassFilter.process(lowContext);
+        highPassFilter.process(highContext);
 
-    midBandBuffer.makeCopyOf(buffer);
-    midBandBuffer.addFrom(0, 0, lowBandBuffer, 0, 0, buffer.getNumSamples(), -1.0f);
-    midBandBuffer.addFrom(1, 0, lowBandBuffer, 1, 0, buffer.getNumSamples(), -1.0f);
-    midBandBuffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples(), -1.0f);
-    midBandBuffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples(), -1.0f);
+        midBandBuffer.makeCopyOf(buffer);
+        midBandBuffer.addFrom(0, 0, lowBandBuffer, 0, 0, buffer.getNumSamples(), -1.0f);
+        midBandBuffer.addFrom(1, 0, lowBandBuffer, 1, 0, buffer.getNumSamples(), -1.0f);
+        midBandBuffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples(), -1.0f);
+        midBandBuffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples(), -1.0f);
 
-    // Apply different distortion algorithms to each band with enhanced low-end and smoother highs
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* lowBandData = lowBandBuffer.getWritePointer(channel);
-        auto* midBandData = midBandBuffer.getWritePointer(channel);
-        auto* highBandData = highBandBuffer.getWritePointer(channel);
-        auto* originalData = buffer.getWritePointer(channel);
-
-        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        // Apply different distortion algorithms to each band with enhanced low-end and smoother highs
+        for (int channel = 0; channel < totalNumInputChannels; ++channel)
         {
-            float drive = *driveParameter * 7.5f; // Use drive parameter
-            float inputSample = originalData[sample];
+            auto* lowBandData = lowBandBuffer.getWritePointer(channel);
+            auto* midBandData = midBandBuffer.getWritePointer(channel);
+            auto* highBandData = highBandBuffer.getWritePointer(channel);
+            auto* originalData = buffer.getWritePointer(channel);
 
-            float lowBoost = inputSample * 1.15f;
-            float lowCut = (std::abs(inputSample) > 40.0f / 44100.0f) ? lowBoost : 0.0f;
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+            {
+                float drive = *driveParameter * 7.5f; // Use drive parameter
+                float inputSample = originalData[sample];
 
-            // === Input Level Normalization for Consistency ===
-            float inputGainComp = 1.0f + (0.8f / (0.2f + std::abs(inputSample))); // Keeps levels even
-            float adaptiveDrive = drive * inputGainComp; // Adjust drive dynamically
+                float lowBoost = inputSample * 1.15f;
+                float lowCut = (std::abs(inputSample) > 40.0f / 44100.0f) ? lowBoost : 0.0f;
 
-            // === Low Band: Stronger saturation, no clean blend ===
-            float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.9f);
-            lowSample = std::tanh(lowSample * 5.0f);
-            lowSample *= 1.35f;
+                // === Input Level Normalization for Consistency ===
+                float inputGainComp = 1.0f + (0.8f / (0.2f + std::abs(inputSample))); // Keeps levels even
+                float adaptiveDrive = drive * inputGainComp; // Adjust drive dynamically
 
-            // === Mid Band: Richer saturation & compression for glue ===
-            float midSample = midBandData[sample] * (1.0f + adaptiveDrive * 1.1f);
-            midSample = midSample / (1.0f + std::abs(midSample) * 0.6f);
-            midSample = std::tanh(midSample * 5.0f);
-            midSample *= 1.05f;
+                // === Low Band: Stronger saturation, no clean blend ===
+                float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.9f);
+                lowSample = std::tanh(lowSample * 5.0f);
+                lowSample *= 1.35f;
 
-            // === High Band: Softer presence, reduced harshness ===
-            float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 1.0f);
-            highSample = juce::jlimit<float>(-0.5f, 0.5f, highSample);
-            highSample = highSample * 0.9f + std::sin(highSample * 1.6f);
-            highSample = (highSample * 0.75f) + (originalData[sample] * 0.25f);
+                // === Mid Band: Richer saturation & compression for glue ===
+                float midSample = midBandData[sample] * (1.0f + adaptiveDrive * 1.1f);
+                midSample = midSample / (1.0f + std::abs(midSample) * 0.6f);
+                midSample = std::tanh(midSample * 5.0f);
+                midSample *= 1.05f;
 
-            // === Cabinet Simulation: Low-pass + Resonance for glue ===
-            float cabSim = (lowSample * 0.9f) + (midSample * 1.1f) + (highSample * 0.8f);
-            cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 4500)->getMagnitudeForFrequency(4500, 44100) * cabSim;
-            cabSim = std::tanh(cabSim * 1.3f);
+                // === High Band: Softer presence, reduced harshness ===
+                float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 1.0f);
+                highSample = juce::jlimit<float>(-0.5f, 0.5f, highSample);
+                highSample = highSample * 0.9f + std::sin(highSample * 1.6f);
+                highSample = (highSample * 0.75f) + (originalData[sample] * 0.25f);
 
-            // Assign modified samples back
-            lowBandData[sample] = lowSample;
-            midBandData[sample] = midSample;
-            highBandData[sample] = highSample;
-            originalData[sample] = (cabSim * 0.95f) + (originalData[sample] * 0.05f);
+                // === Cabinet Simulation: Low-pass + Resonance for glue ===
+                float cabSim = (lowSample * 0.9f) + (midSample * 1.1f) + (highSample * 0.8f);
+                cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 4500)->getMagnitudeForFrequency(4500, 44100) * cabSim;
+                cabSim = std::tanh(cabSim * 1.3f);
+
+                // Assign modified samples back
+                lowBandData[sample] = lowSample;
+                midBandData[sample] = midSample;
+                highBandData[sample] = highSample;
+                originalData[sample] = (cabSim * 0.95f) + (originalData[sample] * 0.05f);
+            }
+        }
+
+        // Recombine the bands into the final output
+        buffer.makeCopyOf(lowBandBuffer);
+        buffer.addFrom(0, 0, midBandBuffer, 0, 0, buffer.getNumSamples());
+        buffer.addFrom(1, 0, midBandBuffer, 1, 0, buffer.getNumSamples());
+        buffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples());
+        buffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples());
+
+        // Mix the clean and distorted signals based on the blend parameter
+        float blend = blendParameter->get();
+        for (int channel = 0; channel < totalNumInputChannels; ++channel)
+        {
+            auto* cleanData = cleanBuffer.getReadPointer(channel);
+            auto* distortedData = buffer.getWritePointer(channel);
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+            {
+                distortedData[sample] = (1.0f - blend) * cleanData[sample] + blend * distortedData[sample];
+            }
+        }
+
+        // Apply volume control
+        float volume = *volumeParameter;
+        for (int channel = 0; channel < totalNumOutputChannels; ++channel)
+        {
+            buffer.applyGain(channel, 0, buffer.getNumSamples(), volume);
         }
     }
-
-    // Recombine the bands into the final output
-    buffer.makeCopyOf(lowBandBuffer);
-    buffer.addFrom(0, 0, midBandBuffer, 0, 0, buffer.getNumSamples());
-    buffer.addFrom(1, 0, midBandBuffer, 1, 0, buffer.getNumSamples());
-    buffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples());
-    buffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples());
-
-    // Mix the clean and distorted signals based on the blend parameter
-    float blend = blendParameter->get();
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* cleanData = cleanBuffer.getReadPointer(channel);
-        auto* distortedData = buffer.getWritePointer(channel);
-        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
-        {
-            distortedData[sample] = (1.0f - blend) * cleanData[sample] + blend * distortedData[sample];
-        }
-    }
-
-    // Apply volume control
-    float volume = *volumeParameter;
-    for (int channel = 0; channel < totalNumOutputChannels; ++channel)
-    {
-        buffer.applyGain(channel, 0, buffer.getNumSamples(), volume);
+    else {
+        // Bypass the effect, just pass the clean signal
     }
 }
 

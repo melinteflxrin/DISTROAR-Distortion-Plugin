@@ -45,6 +45,8 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    void setEffectEnabled(bool enabled);
+    bool effectEnabled;
     double distortionAmount;
     juce::AudioParameterFloat* volumeParameter;
     juce::AudioParameterFloat* blendParameter;
@@ -58,4 +60,5 @@ private:
     juce::AudioBuffer<float> lowBandBuffer;
     juce::AudioBuffer<float> midBandBuffer;
     juce::AudioBuffer<float> highBandBuffer;
+
 };
