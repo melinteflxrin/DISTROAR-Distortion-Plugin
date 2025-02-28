@@ -16,7 +16,8 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
 {
     addParameter(volumeParameter = new juce::AudioParameterFloat("volume", "Volume", 0.0f, 1.0f, 0.5f));
     addParameter(blendParameter = new juce::AudioParameterFloat("blend", "Blend", 0.0f, 1.0f, 0.5f));
-    addParameter(driveParameter = new juce::AudioParameterFloat("drive", "Drive", 0.0f, 1.0f, 0.5f)); // Initialize drive parameter
+    addParameter(driveParameter = new juce::AudioParameterFloat("drive", "Drive", 0.0f, 1.0f, 0.5f)); 
+    addParameter(toneParameter = new juce::AudioParameterFloat("tone", "Tone", 20.0f, 20000.0f, 20000.0f));
 
     distortionAmount = 1.0; // Initialize distortion amount
 
@@ -109,6 +110,12 @@ void DISTROARAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     lowBandBuffer.setSize(2, samplesPerBlock);
     midBandBuffer.setSize(2, samplesPerBlock);
     highBandBuffer.setSize(2, samplesPerBlock);
+
+    // Prepare tone control low pass filter
+    toneLowPassFilter.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
+    toneLowPassFilter.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), 2 });
+    toneLowPassFilter.reset(); // Reset the filter to clear any previous state
+
 }
 
 void DISTROARAudioProcessor::releaseResources()
@@ -250,6 +257,14 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
             }
         }
 
+        // Apply tone control using the existing low pass filter
+        float toneFrequency = *toneParameter;
+        toneLowPassFilter.setCutoffFrequency(toneFrequency);
+
+        juce::dsp::AudioBlock<float> bufferBlock(buffer);
+        juce::dsp::ProcessContextReplacing<float> toneContext(bufferBlock);
+        toneLowPassFilter.process(toneContext);
+
         // Apply volume control
         float volume = *volumeParameter;
         for (int channel = 0; channel < totalNumOutputChannels; ++channel)
@@ -261,6 +276,7 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         // Bypass the effect, just pass the clean signal
     }
 }
+
 
 //==============================================================================
 bool DISTROARAudioProcessor::hasEditor() const

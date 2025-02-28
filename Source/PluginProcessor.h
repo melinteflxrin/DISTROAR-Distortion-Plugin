@@ -50,15 +50,17 @@ public:
     double distortionAmount;
     juce::AudioParameterFloat* volumeParameter;
     juce::AudioParameterFloat* blendParameter;
-    juce::AudioParameterFloat* driveParameter; // Add drive parameter
+    juce::AudioParameterFloat* driveParameter; 
+    juce::AudioParameterFloat* toneParameter; 
 
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DISTROARAudioProcessor)
-        juce::dsp::LinkwitzRileyFilter<float> lowPassFilter;
+    juce::dsp::LinkwitzRileyFilter<float> lowPassFilter;
     juce::dsp::LinkwitzRileyFilter<float> highPassFilter;
     juce::AudioBuffer<float> lowBandBuffer;
     juce::AudioBuffer<float> midBandBuffer;
     juce::AudioBuffer<float> highBandBuffer;
+    juce::dsp::LinkwitzRileyFilter<float> toneLowPassFilter;
 
 };

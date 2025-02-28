@@ -24,14 +24,16 @@ private:
     juce::Label distortionLabel;
     juce::Slider blendSlider;
     juce::Label blendLabel;
+    juce::Slider toneSlider; 
+    juce::Label toneLabel;   
 
     juce::ImageButton toggleButton;
     bool effectEnabled;
 
     CustomLookAndFeel customLookAndFeel;
     juce::Image backgroundImage;
-    juce::Image buttonOnImage; 
-    juce::Image buttonOffImage; 
+    juce::Image buttonOnImage;
+    juce::Image buttonOffImage;
     juce::Point<int> initialMousePosition;
 
     DISTROARAudioProcessor& audioProcessor;

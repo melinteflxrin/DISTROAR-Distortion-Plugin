@@ -76,6 +76,23 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     blendLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(&blendLabel);
 
+    // Tone Slider
+    toneSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    toneSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    toneSlider.setRange(20.0, 20000.0, 1.0);
+    toneSlider.setValue(*audioProcessor.toneParameter);
+    toneSlider.setLookAndFeel(&customLookAndFeel);
+    toneSlider.addListener(this);
+    toneSlider.addMouseListener(this, false);
+    toneSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
+    toneSlider.setMouseDragSensitivity(300); // Increase sensitivity
+    addAndMakeVisible(&toneSlider);
+
+    // Tone Label
+    toneLabel.setText("Tone", juce::dontSendNotification);
+    toneLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(&toneLabel);
+
     setSize(300, 450);
 }
 
@@ -84,6 +101,7 @@ DISTROARAudioProcessorEditor::~DISTROARAudioProcessorEditor()
     volumeSlider.setLookAndFeel(nullptr);
     distortionSlider.setLookAndFeel(nullptr);
     blendSlider.setLookAndFeel(nullptr);
+    toneSlider.setLookAndFeel(nullptr);
     toggleButton.removeListener(this);
 }
 
@@ -108,7 +126,10 @@ void DISTROARAudioProcessorEditor::resized()
     blendSlider.setBounds(padding, padding + sliderHeight + labelHeight + padding, sliderWidth, sliderHeight);
     blendLabel.setBounds(padding, padding + 2 * (sliderHeight + labelHeight) + padding, sliderWidth, labelHeight);
 
-    toggleButton.setBounds(padding + sliderWidth + padding, padding + sliderHeight + labelHeight + padding, 100, 100);
+    toneSlider.setBounds(padding + sliderWidth + padding, padding + sliderHeight + labelHeight + padding, sliderWidth, sliderHeight);
+    toneLabel.setBounds(padding + sliderWidth + padding, padding + 2 * (sliderHeight + labelHeight) + padding, sliderWidth, labelHeight);
+
+    toggleButton.setBounds(padding + sliderWidth + padding, padding + 2 * (sliderHeight + labelHeight) + 2 * padding, 100, 100);
 }
 
 void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
@@ -124,6 +145,10 @@ void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     else if (slider == &blendSlider)
     {
         *audioProcessor.blendParameter = (float)slider->getValue();
+    }
+    else if (slider == &toneSlider)
+    {
+        *audioProcessor.toneParameter = (float)slider->getValue();
     }
 }
 
@@ -146,7 +171,7 @@ void DISTROARAudioProcessorEditor::buttonClicked(juce::Button* button)
 
 void DISTROARAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
 {
-    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider)
+    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider || event.eventComponent == &toneSlider)
     {
         // Store the initial mouse position
         initialMousePosition = event.getScreenPosition();
@@ -160,7 +185,7 @@ void DISTROARAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
 
 void DISTROARAudioProcessorEditor::mouseUp(const juce::MouseEvent& event)
 {
-    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider)
+    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider || event.eventComponent == &toneSlider)
     {
         // Restore the default mouse cursor
         juce::MouseCursor::hideWaitCursor();
