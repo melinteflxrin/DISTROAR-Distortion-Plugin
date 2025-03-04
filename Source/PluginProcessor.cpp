@@ -133,7 +133,7 @@ void DISTROARAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
     // Initialize input gain
     inputGain.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), 2 });
-    inputGain.setGainDecibels(5.0f); // Apply a fixed gain boost
+    inputGain.setGainDecibels(10.0f); // Apply a fixed gain boost
 
 }
 
@@ -184,10 +184,6 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         buffer.clear(i, 0, buffer.getNumSamples());
 
     if (effectEnabled) {
-        // Store the clean signal
-        juce::AudioBuffer<float> cleanBuffer;
-        cleanBuffer.makeCopyOf(buffer);
-
         // Apply input gain boost
         juce::dsp::AudioBlock<float> gainBlock(buffer);
         juce::dsp::ProcessContextReplacing<float> gainContext(gainBlock);
@@ -197,6 +193,10 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         juce::dsp::AudioBlock<float> preCompBlock(buffer);
         juce::dsp::ProcessContextReplacing<float> preCompContext(preCompBlock);
         preDistortionCompressor.process(preCompContext);
+
+        // Store the signal after pre-distortion compression
+        juce::AudioBuffer<float> preDistortionCompressedBuffer;
+        preDistortionCompressedBuffer.makeCopyOf(buffer);
 
         // Split the input into three bands
         lowBandBuffer.makeCopyOf(buffer);
@@ -274,15 +274,15 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         buffer.addFrom(0, 0, highBandBuffer, 0, 0, buffer.getNumSamples());
         buffer.addFrom(1, 0, highBandBuffer, 1, 0, buffer.getNumSamples());
 
-        // Mix the clean and distorted signals based on the blend parameter
+        // Mix the pre-distortion compressed signal and distorted signals based on the blend parameter
         float blend = blendParameter->get();
         for (int channel = 0; channel < totalNumInputChannels; ++channel)
         {
-            auto* cleanData = cleanBuffer.getReadPointer(channel);
+            auto* preCompData = preDistortionCompressedBuffer.getReadPointer(channel);
             auto* distortedData = buffer.getWritePointer(channel);
             for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
             {
-                distortedData[sample] = (1.0f - blend) * cleanData[sample] + blend * distortedData[sample];
+                distortedData[sample] = (1.0f - blend) * preCompData[sample] + blend * distortedData[sample];
             }
         }
 
