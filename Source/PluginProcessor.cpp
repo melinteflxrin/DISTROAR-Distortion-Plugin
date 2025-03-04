@@ -227,44 +227,49 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
             for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
             {
-                float drive = *driveParameter * 6.5f; // Adjusted drive for warmth
+                float drive = *driveParameter * 5.5f; // Slightly lower drive for smoother saturation
                 float inputSample = originalData[sample];
 
-                // === Input Gain Compensation ===
-                float inputGainComp = 1.0f + (0.7f / (0.3f + std::abs(inputSample)));
+                // === Pre-Saturation Softening: Reduces pick attack & fizz ===
+                float preFiltered = inputSample * 0.85f + std::sin(inputSample * 1.1f) * 0.15f;
+
+                // === Input Gain Compensation for Dynamics ===
+                float inputGainComp = 1.0f + (0.5f / (0.4f + std::abs(preFiltered)));
                 float adaptiveDrive = drive * inputGainComp;
 
-                // === Low Band: Chunky, tight, no muddiness ===
-                float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.85f);
-                lowSample = std::tanh(lowSample * 4.5f); // Warmer saturation curve
-                lowSample *= 1.25f;
-                lowSample = juce::jlimit<float>(-0.8f, 0.8f, lowSample); // Prevent excessive boominess
+                // === Low Band: Powerful but Clean Low-End ===
+                float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.75f);
+                lowSample = lowSample / (1.0f + std::abs(lowSample) * 0.4f); // Soft limiting for tight lows
+                lowSample = std::tanh(lowSample * 3.5f); // Less aggressive saturation
+                lowSample *= 1.1f;
 
-                // === Mid Band: Full-bodied, rich, and warm ===
-                float midSample = midBandData[sample] * (1.0f + adaptiveDrive * 1.0f);
-                midSample = midSample / (1.0f + std::abs(midSample) * 0.55f); // Soft limiting
-                midSample = std::tanh(midSample * 4.2f); // Warmer tone
-                midSample *= 1.1f;
+                // === Mid Band: Full-bodied without harshness ===
+                float midSample = midBandData[sample] * (1.0f + adaptiveDrive * 0.85f);
+                midSample = midSample / (1.0f + std::abs(midSample) * 0.45f);
+                midSample = std::atan(midSample * 3.0f); // More amp-like saturation curve
+                midSample *= 1.05f;
 
-                // === High Band: Smooth and present, not harsh ===
-                float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 0.85f);
-                highSample = juce::jlimit<float>(-0.4f, 0.4f, highSample); // Prevent fizz
-                highSample = highSample * 0.85f + std::atan(highSample * 1.5f); // Softer presence
-                highSample = (highSample * 0.7f) + (originalData[sample] * 0.3f); // Keep some original tone
+                // === High Band: Smooth Presence, No Harsh Fizz ===
+                float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 0.65f);
+                highSample = juce::jlimit<float>(-0.3f, 0.3f, highSample); // Tame high spikes
+                highSample = highSample * 0.75f + std::atan(highSample * 1.3f) * 0.25f; // Rounder highs
+                highSample = (highSample * 0.6f) + (preFiltered * 0.4f); // Blend in natural tone
 
-                // === Cabinet Simulation: Refined for tightness ===
-                float cabSim = (lowSample * 1.0f) + (midSample * 1.0f) + (highSample * 0.75f);
-                cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 4200)
-                    ->getMagnitudeForFrequency(4200, 44100) * cabSim;
-                cabSim = std::tanh(cabSim * 1.2f); // Keep power but avoid fizz
+                // === Cabinet Simulation: Cuts Fizz & Adds Warmth ===
+                float cabSim = (lowSample * 1.0f) + (midSample * 1.0f) + (highSample * 0.65f);
+                cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 3800)
+                    ->getMagnitudeForFrequency(3800, 44100) * cabSim;
+                cabSim = std::tanh(cabSim * 1.1f); // Smooth compression effect
 
                 // Assign modified samples back
                 lowBandData[sample] = lowSample;
                 midBandData[sample] = midSample;
                 highBandData[sample] = highSample;
-                originalData[sample] = (cabSim * 0.9f) + (originalData[sample] * 0.1f); // Blend in a little dry signal
+                originalData[sample] = (cabSim * 0.85f) + (originalData[sample] * 0.15f); // Slight dry blend for realism
             }
         }
+
+
 
 
         // Recombine the bands into the final output
