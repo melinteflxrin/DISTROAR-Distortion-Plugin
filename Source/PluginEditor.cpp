@@ -93,6 +93,23 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     toneLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(&toneLabel);
 
+    // Gate Slider
+    gateSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    gateSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    gateSlider.setRange(-90.0, 0.0, 0.1);
+    gateSlider.setValue(*audioProcessor.gateParameter);
+    gateSlider.setLookAndFeel(&customLookAndFeel);
+    gateSlider.addListener(this);
+    gateSlider.addMouseListener(this, false);
+    gateSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
+    gateSlider.setMouseDragSensitivity(300);
+    addAndMakeVisible(&gateSlider);
+
+    // Gate Label
+    gateLabel.setText("Gate", juce::dontSendNotification);
+    gateLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(&gateLabel);
+
     setSize(300, 450);
 }
 
@@ -129,6 +146,9 @@ void DISTROARAudioProcessorEditor::resized()
     toneSlider.setBounds(padding + sliderWidth + padding, padding + sliderHeight + labelHeight + padding, sliderWidth, sliderHeight);
     toneLabel.setBounds(padding + sliderWidth + padding, padding + 2 * (sliderHeight + labelHeight) + padding, sliderWidth, labelHeight);
 
+    gateSlider.setBounds(padding, padding + 2 * (sliderHeight + labelHeight) + 2 * padding, sliderWidth, sliderHeight);
+    gateLabel.setBounds(padding, padding + 3 * (sliderHeight + labelHeight) + 2 * padding, sliderWidth, labelHeight);
+
     toggleButton.setBounds(padding + sliderWidth + padding, padding + 2 * (sliderHeight + labelHeight) + 2 * padding, 100, 100);
 }
 
@@ -149,6 +169,10 @@ void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     else if (slider == &toneSlider)
     {
         *audioProcessor.toneParameter = (float)slider->getValue();
+    }
+    else if (slider == &gateSlider)
+    {
+        *audioProcessor.gateParameter = (float)slider->getValue();
     }
 }
 
@@ -171,7 +195,7 @@ void DISTROARAudioProcessorEditor::buttonClicked(juce::Button* button)
 
 void DISTROARAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
 {
-    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider || event.eventComponent == &toneSlider)
+    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider || event.eventComponent == &toneSlider || event.eventComponent == &gateSlider)
     {
         // Store the initial mouse position
         initialMousePosition = event.getScreenPosition();
@@ -185,7 +209,7 @@ void DISTROARAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
 
 void DISTROARAudioProcessorEditor::mouseUp(const juce::MouseEvent& event)
 {
-    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider || event.eventComponent == &toneSlider)
+    if (event.eventComponent == &volumeSlider || event.eventComponent == &distortionSlider || event.eventComponent == &blendSlider || event.eventComponent == &toneSlider || event.eventComponent == &gateSlider)
     {
         // Restore the default mouse cursor
         juce::MouseCursor::hideWaitCursor();

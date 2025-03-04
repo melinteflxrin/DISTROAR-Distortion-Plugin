@@ -20,12 +20,18 @@ private:
 
     juce::Slider volumeSlider;
     juce::Label volumeLabel;
+
     juce::Slider distortionSlider;
     juce::Label distortionLabel;
+
     juce::Slider blendSlider;
     juce::Label blendLabel;
+
     juce::Slider toneSlider;
     juce::Label toneLabel;
+
+    juce::Slider gateSlider;
+    juce::Label gateLabel;
 
     juce::ImageButton toggleButton;
     bool effectEnabled;

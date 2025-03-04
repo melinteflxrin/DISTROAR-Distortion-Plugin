@@ -52,6 +52,9 @@ public:
     juce::AudioParameterFloat* blendParameter;
     juce::AudioParameterFloat* driveParameter;
     juce::AudioParameterFloat* toneParameter;
+    juce::AudioParameterFloat* gateParameter;
+    float currentGainReduction;
+    float smoothingFactor;
 
 private:
     //==============================================================================

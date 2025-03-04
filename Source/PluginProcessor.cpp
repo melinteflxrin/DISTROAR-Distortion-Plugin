@@ -18,11 +18,14 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
     addParameter(blendParameter = new juce::AudioParameterFloat("blend", "Blend", 0.0f, 1.0f, 0.5f));
     addParameter(driveParameter = new juce::AudioParameterFloat("drive", "Drive", 0.0f, 1.0f, 0.5f));
     addParameter(toneParameter = new juce::AudioParameterFloat("tone", "Tone", 600.0f, 20000.0f, 10300.0f));
-
+    addParameter(gateParameter = new juce::AudioParameterFloat("gate", "Gate", -90.0f, 0.0f, -80.0f));
 
     // Initialize crossover filters
     lowPassFilter.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
     highPassFilter.setType(juce::dsp::LinkwitzRileyFilterType::highpass);
+
+	currentGainReduction = 1.0f;
+	smoothingFactor = 0.005f;
 }
 
 DISTROARAudioProcessor::~DISTROARAudioProcessor()
@@ -189,6 +192,29 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         juce::dsp::ProcessContextReplacing<float> gainContext(gainBlock);
         inputGain.process(gainContext);
 
+        // Apply gate effect before distortion
+        float gateThreshold = juce::Decibels::decibelsToGain(gateParameter->get());
+        float targetGainReduction = 0.0f;
+        float attackTime = 0.01f; // Attack time in seconds
+        float releaseTime = 0.1f; // Release time in seconds
+        float attackCoeff = std::exp(-1.0f / (attackTime * getSampleRate()));
+        float releaseCoeff = std::exp(-1.0f / (releaseTime * getSampleRate()));
+
+        for (int channel = 0; channel < totalNumInputChannels; ++channel)
+        {
+            auto* channelData = buffer.getWritePointer(channel);
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+            {
+                float absSample = std::abs(channelData[sample]);
+                if (absSample < gateThreshold)
+                    currentGainReduction = attackCoeff * currentGainReduction + (1.0f - attackCoeff) * targetGainReduction;
+                else
+                    currentGainReduction = releaseCoeff * currentGainReduction + (1.0f - releaseCoeff) * 1.0f;
+
+                channelData[sample] *= currentGainReduction;
+            }
+        }
+
         // Apply pre-distortion compression
         juce::dsp::AudioBlock<float> preCompBlock(buffer);
         juce::dsp::ProcessContextReplacing<float> preCompContext(preCompBlock);
@@ -267,7 +293,6 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
             }
         }
 
-
         // Recombine the bands into the final output
         buffer.makeCopyOf(lowBandBuffer);
         buffer.addFrom(0, 0, midBandBuffer, 0, 0, buffer.getNumSamples());
@@ -298,6 +323,22 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         // Apply post-distortion compression
         juce::dsp::ProcessContextReplacing<float> postCompContext(bufferBlock);
         postDistortionCompressor.process(postCompContext);
+
+        // Apply gate effect after distortion
+        for (int channel = 0; channel < totalNumInputChannels; ++channel)
+        {
+            auto* channelData = buffer.getWritePointer(channel);
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+            {
+                float absSample = std::abs(channelData[sample]);
+                if (absSample < gateThreshold)
+                    currentGainReduction = attackCoeff * currentGainReduction + (1.0f - attackCoeff) * targetGainReduction;
+                else
+                    currentGainReduction = releaseCoeff * currentGainReduction + (1.0f - releaseCoeff) * 1.0f;
+
+                channelData[sample] *= currentGainReduction;
+            }
+        }
 
         // Apply volume control
         float volume = *volumeParameter;
