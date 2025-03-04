@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="GYV4s2" name="DISTROAR" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="DISTROAR"
-              pluginDesc="Distortion plugin." pluginVST3Category="Distortion">
+              pluginDesc="Distortion plugin." pluginVST3Category="Fx">
   <MAINGROUP id="hJue96" name="DISTROAR">
     <GROUP id="{1345067E-A551-95E8-02E1-5E7CB15413C3}" name="Source">
       <FILE id="JJqpUl" name="distroarON.png" compile="0" resource="1" file="C:/Users/User/Desktop/distroarON.png"/>
