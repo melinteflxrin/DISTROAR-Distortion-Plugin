@@ -1,4 +1,4 @@
-#include "PluginProcessor.h"
+﻿#include "PluginProcessor.h"
 #include "PluginEditor.h"
 
 //==============================================================================
@@ -16,7 +16,7 @@ DISTROARAudioProcessor::DISTROARAudioProcessor()
 {
     addParameter(volumeParameter = new juce::AudioParameterFloat("volume", "Volume", 0.0f, 1.0f, 0.5f));
     addParameter(blendParameter = new juce::AudioParameterFloat("blend", "Blend", 0.0f, 1.0f, 0.5f));
-    addParameter(driveParameter = new juce::AudioParameterFloat("drive", "Drive", 0.0f, 1.0f, 0.5f)); 
+    addParameter(driveParameter = new juce::AudioParameterFloat("drive", "Drive", 0.0f, 1.0f, 0.5f));
     addParameter(toneParameter = new juce::AudioParameterFloat("tone", "Tone", 600.0f, 20000.0f, 10300.0f));
 
 
@@ -115,6 +115,26 @@ void DISTROARAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     toneLowPassFilter.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), 2 });
     toneLowPassFilter.reset(); // Reset the filter to clear any previous state
 
+    // Initialize pre-distortion compressor
+    preDistortionCompressor.setThreshold(-20.0f); // Threshold in dB
+    preDistortionCompressor.setRatio(2.0f); // Ratio
+    preDistortionCompressor.setAttack(10.0f); // Attack time in ms
+    preDistortionCompressor.setRelease(100.0f); // Release time in ms
+
+    // Initialize post-distortion compressor
+    postDistortionCompressor.setThreshold(-10.0f); // Threshold in dB
+    postDistortionCompressor.setRatio(6.0f); // Ratio
+    postDistortionCompressor.setAttack(10.0f); // Attack time in ms
+    postDistortionCompressor.setRelease(80.0f); // Release time in ms
+
+    // Prepare compressors
+    preDistortionCompressor.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), 2 });
+    postDistortionCompressor.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), 2 });
+
+    // Initialize input gain
+    inputGain.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), 2 });
+    inputGain.setGainDecibels(5.0f); // Apply a fixed gain boost
+
 }
 
 void DISTROARAudioProcessor::releaseResources()
@@ -167,6 +187,16 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         // Store the clean signal
         juce::AudioBuffer<float> cleanBuffer;
         cleanBuffer.makeCopyOf(buffer);
+
+        // Apply input gain boost
+        juce::dsp::AudioBlock<float> gainBlock(buffer);
+        juce::dsp::ProcessContextReplacing<float> gainContext(gainBlock);
+        inputGain.process(gainContext);
+
+        // Apply pre-distortion compression
+        juce::dsp::AudioBlock<float> preCompBlock(buffer);
+        juce::dsp::ProcessContextReplacing<float> preCompContext(preCompBlock);
+        preDistortionCompressor.process(preCompContext);
 
         // Split the input into three bands
         lowBandBuffer.makeCopyOf(buffer);
@@ -263,6 +293,10 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         juce::dsp::AudioBlock<float> bufferBlock(buffer);
         juce::dsp::ProcessContextReplacing<float> toneContext(bufferBlock);
         toneLowPassFilter.process(toneContext);
+
+        // Apply post-distortion compression
+        juce::dsp::ProcessContextReplacing<float> postCompContext(bufferBlock);
+        postDistortionCompressor.process(postCompContext);
 
         // Apply volume control
         float volume = *volumeParameter;

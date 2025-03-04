@@ -24,8 +24,8 @@ private:
     juce::Label distortionLabel;
     juce::Slider blendSlider;
     juce::Label blendLabel;
-    juce::Slider toneSlider; 
-    juce::Label toneLabel;   
+    juce::Slider toneSlider;
+    juce::Label toneLabel;
 
     juce::ImageButton toggleButton;
     bool effectEnabled;

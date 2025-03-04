@@ -50,8 +50,8 @@ public:
     double distortionAmount;
     juce::AudioParameterFloat* volumeParameter;
     juce::AudioParameterFloat* blendParameter;
-    juce::AudioParameterFloat* driveParameter; 
-    juce::AudioParameterFloat* toneParameter; 
+    juce::AudioParameterFloat* driveParameter;
+    juce::AudioParameterFloat* toneParameter;
 
 private:
     //==============================================================================
@@ -62,5 +62,7 @@ private:
     juce::AudioBuffer<float> midBandBuffer;
     juce::AudioBuffer<float> highBandBuffer;
     juce::dsp::LinkwitzRileyFilter<float> toneLowPassFilter;
-
+    juce::dsp::Compressor<float> preDistortionCompressor;
+    juce::dsp::Compressor<float> postDistortionCompressor;
+    juce::dsp::Gain<float> inputGain;
 };
