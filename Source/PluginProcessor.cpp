@@ -253,55 +253,61 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
             for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
             {
-                float drive = *driveParameter * 6.0f; // Higher drive, but controlled
+                float drive = *driveParameter * 6.2f; // Slightly more refined drive
                 float inputSample = originalData[sample];
 
-                // Adaptive Gain Compensation for Sustain
-                float inputGainComp = 1.0f + (0.25f / (0.15f + std::abs(inputSample)));
+                // Adaptive Gain Compensation for Sustain & Clarity
+                float inputGainComp = 1.0f + (0.22f / (0.12f + std::abs(inputSample)));
                 float adaptiveDrive = drive * inputGainComp;
 
-                // Low Band - Ultra-tight, no mud
-                float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.5f);
-                lowSample = juce::jlimit<float>(-0.4f, 0.4f, lowSample);
-                lowSample = (lowSample > 0.0f ? std::pow(lowSample, 0.7f) : -std::pow(-lowSample, 0.7f)); // Sharper definition
-                lowSample *= 1.1f;
+                // LOW BAND - Keep it Tight, No Boom
+                float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.4f);
+                lowSample = juce::jlimit<float>(-0.32f, 0.32f, lowSample); // Further reduced excess low-end
+                lowSample = (lowSample > 0.0f ? std::pow(lowSample, 0.65f) : -std::pow(-lowSample, 0.65f)); // More control
+                lowSample *= 1.04f;
 
-                // Mid Band - Aggressive, cutting, NO smear
-                float midSample = midBandData[sample] * (1.0f + adaptiveDrive * 1.2f);
-                midSample = juce::jlimit<float>(-0.35f, 0.35f, midSample);
-                midSample = (midSample > 0.0f ? std::pow(midSample, 1.2f) : -std::pow(-midSample, 1.2f)); // Clarity boost
-                midSample *= 1.3f;
+                // MID BAND - Aggressive, Cutting, and Clean
+                float midSample = midBandData[sample] * (1.0f + adaptiveDrive * 1.15f);
+                midSample = juce::jlimit<float>(-0.32f, 0.32f, midSample);
+                midSample = (midSample > 0.0f ? std::pow(midSample, 1.25f) : -std::pow(-midSample, 1.25f)); // More articulation
+                midSample *= 1.18f;
 
-                // High Band - Crystal clear, sharp attack, no fizz
-                float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 0.4f);
-                highSample = juce::jlimit<float>(-0.25f, 0.25f, highSample);
-                highSample = (highSample > 0.0f ? std::pow(highSample, 1.5f) : -std::pow(-highSample, 1.5f)); // Edge without harshness
-                highSample *= 0.95f;
+                // HIGH BAND - Reduce Fizz, Keep Attack
+                float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 0.3f); // Lowered drive in high end
+                highSample = juce::jlimit<float>(-0.18f, 0.18f, highSample); // Reduce harsh high peaks
+                highSample = (highSample > 0.0f ? std::pow(highSample, 1.2f) : -std::pow(-highSample, 1.2f)); // Softer clipping for smoothness
+                highSample *= 0.88f; // Slight roll-off to further control fizz
 
-                // Dynamic Control - Prevents buildup & keeps it punchy
-                float dynamicSmoothing = 1.0f / (1.0f + std::abs(lowSample * 0.25f + midSample * 0.35f + highSample * 0.15f));
-                lowSample *= dynamicSmoothing * 1.1f;
-                midSample *= dynamicSmoothing * 1.1f;
-                highSample *= dynamicSmoothing * 1.05f;
+                // Dynamic Control - Keeps It Punchy & Tight
+                float dynamicSmoothing = 1.0f / (1.0f + std::abs(lowSample * 0.2f + midSample * 0.28f + highSample * 0.15f));
+                lowSample *= dynamicSmoothing * 1.05f;
+                midSample *= dynamicSmoothing * 1.08f;
+                highSample *= dynamicSmoothing * 1.03f;
 
-                // Hard Clipping for Maximum Aggression
-                float finalSample = (lowSample * 0.9f) + (midSample * 1.2f) + (highSample * 1.05f);
-                finalSample = juce::jlimit<float>(-0.8f, 0.8f, finalSample);
-                finalSample = finalSample > 0.0f ? std::pow(finalSample, 0.85f) : -std::pow(-finalSample, 0.85f); // Controlled power
+                // Hard Clipping for Controlled Aggression
+                float finalSample = (lowSample * 0.85f) + (midSample * 1.2f) + (highSample * 0.98f); // Reduced high band contribution
+                finalSample = juce::jlimit<float>(-0.7f, 0.7f, finalSample);
+                finalSample = finalSample > 0.0f ? std::pow(finalSample, 0.8f) : -std::pow(-finalSample, 0.8f); // Even smoother distortion
 
-                // Final Stage - No cabinet warmth, just modern precision
-                float cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 7500)
-                    ->getMagnitudeForFrequency(7500, 44100) * finalSample;
-                cabSim = juce::jlimit<float>(-0.75f, 0.75f, cabSim);
-                cabSim *= 1.05f; // Adds final definition
+                // FINAL EQ - Less Fizz, Tighter Highs
+                float cabSim = juce::dsp::IIR::Coefficients<float>::makeHighPass(44100, 95) // Cut sub-bass
+                    ->getMagnitudeForFrequency(95, 44100) * finalSample;
+                cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 6500) // Lowered to remove more fizz
+                    ->getMagnitudeForFrequency(6500, 44100) * cabSim;
+                cabSim = juce::jlimit<float>(-0.65f, 0.65f, cabSim);
+                cabSim *= 1.02f; // Keep definition
 
                 // Assign modified samples back
                 lowBandData[sample] = lowSample;
                 midBandData[sample] = midSample;
                 highBandData[sample] = highSample;
-                originalData[sample] = (cabSim * 0.997f) + (originalData[sample] * 0.003f); // Almost 100% wet
+                originalData[sample] = (cabSim * 0.998f) + (originalData[sample] * 0.002f); // 99.8% wet
             }
         }
+
+
+
+
 
 
       
