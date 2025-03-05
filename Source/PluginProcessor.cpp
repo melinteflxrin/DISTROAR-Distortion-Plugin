@@ -253,61 +253,58 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
             for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
             {
-                float drive = *driveParameter * 5.0f; // More aggressive drive
+                float drive = *driveParameter * 6.0f; // Higher drive, but controlled
                 float inputSample = originalData[sample];
 
-                // Adaptive Gain Compensation - Ensures consistency across dynamics
-                float inputGainComp = 1.02f + (0.35f / (0.2f + std::abs(inputSample)));
+                // Adaptive Gain Compensation for Sustain
+                float inputGainComp = 1.0f + (0.25f / (0.15f + std::abs(inputSample)));
                 float adaptiveDrive = drive * inputGainComp;
 
-                // Low Band - Make it percussive, deep, but not muddy
-                float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.75f);
-                lowSample = juce::jlimit<float>(-0.6f, 0.6f, lowSample);
-                lowSample = (lowSample > 0.0f ? std::pow(lowSample, 0.8f) : -std::pow(-lowSample, 0.8f)); // Harder attack
-                lowSample *= 1.25f;
+                // Low Band - Ultra-tight, no mud
+                float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.5f);
+                lowSample = juce::jlimit<float>(-0.4f, 0.4f, lowSample);
+                lowSample = (lowSample > 0.0f ? std::pow(lowSample, 0.7f) : -std::pow(-lowSample, 0.7f)); // Sharper definition
+                lowSample *= 1.1f;
 
-                // Mid Band - Sharp, open, and aggressive
+                // Mid Band - Aggressive, cutting, NO smear
                 float midSample = midBandData[sample] * (1.0f + adaptiveDrive * 1.2f);
-                midSample = juce::jlimit<float>(-0.5f, 0.5f, midSample);
-                midSample = (midSample > 0.0f ? std::pow(midSample, 1.15f) : -std::pow(-midSample, 1.15f)); // Extra cut
-                midSample = juce::jlimit<float>(-0.6f, 0.6f, midSample);
-                midSample *= 1.3f; // More presence and aggression
+                midSample = juce::jlimit<float>(-0.35f, 0.35f, midSample);
+                midSample = (midSample > 0.0f ? std::pow(midSample, 1.2f) : -std::pow(-midSample, 1.2f)); // Clarity boost
+                midSample *= 1.3f;
 
-                // High Band - Razor sharp attack with no fizz
-                float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 0.6f);
-                highSample = juce::jlimit<float>(-0.3f, 0.3f, highSample);
-                highSample = (highSample > 0.0f ? std::pow(highSample, 1.2f) : -std::pow(-highSample, 1.2f)); // Asymmetric, sharper clipping
-                highSample *= 0.85f;
-                highSample = (highSample * 0.7f) + (originalData[sample] * 0.3f); // Keep some clarity
+                // High Band - Crystal clear, sharp attack, no fizz
+                float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 0.4f);
+                highSample = juce::jlimit<float>(-0.25f, 0.25f, highSample);
+                highSample = (highSample > 0.0f ? std::pow(highSample, 1.5f) : -std::pow(-highSample, 1.5f)); // Edge without harshness
+                highSample *= 0.95f;
 
-                // Dynamic Control - Keep it tight, not flubby
-                float dynamicSmoothing = 1.0f / (1.0f + std::abs(lowSample * 0.3f + midSample * 0.5f + highSample * 0.3f));
+                // Dynamic Control - Prevents buildup & keeps it punchy
+                float dynamicSmoothing = 1.0f / (1.0f + std::abs(lowSample * 0.25f + midSample * 0.35f + highSample * 0.15f));
                 lowSample *= dynamicSmoothing * 1.1f;
                 midSample *= dynamicSmoothing * 1.1f;
                 highSample *= dynamicSmoothing * 1.05f;
 
-                // Final Aggressive Clipping - Modern Metal Power
-                float finalSample = (lowSample * 0.9f) + (midSample * 1.1f) + (highSample * 1.0f);
-                finalSample = juce::jlimit<float>(-0.8f, 0.8f, finalSample); // Prevent flabbiness
-                finalSample = (finalSample > 0.0f ? std::pow(finalSample, 0.95f) : -std::pow(-finalSample, 0.95f)); // Edge without saturation
+                // Hard Clipping for Maximum Aggression
+                float finalSample = (lowSample * 0.9f) + (midSample * 1.2f) + (highSample * 1.05f);
+                finalSample = juce::jlimit<float>(-0.8f, 0.8f, finalSample);
+                finalSample = finalSample > 0.0f ? std::pow(finalSample, 0.85f) : -std::pow(-finalSample, 0.85f); // Controlled power
 
-                // Cabinet Simulation - Clear and aggressive
-                float cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 6000)
-                    ->getMagnitudeForFrequency(6000, 44100) * finalSample;
-                cabSim = juce::jlimit<float>(-0.75f, 0.75f, cabSim); // More precision
-                cabSim = (cabSim * 1.2f); // Extra punch
+                // Final Stage - No cabinet warmth, just modern precision
+                float cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 7500)
+                    ->getMagnitudeForFrequency(7500, 44100) * finalSample;
+                cabSim = juce::jlimit<float>(-0.75f, 0.75f, cabSim);
+                cabSim *= 1.05f; // Adds final definition
 
                 // Assign modified samples back
                 lowBandData[sample] = lowSample;
                 midBandData[sample] = midSample;
                 highBandData[sample] = highSample;
-                originalData[sample] = (cabSim * 0.99f) + (originalData[sample] * 0.01f); // Just 1% dry signal for some rawness
+                originalData[sample] = (cabSim * 0.997f) + (originalData[sample] * 0.003f); // Almost 100% wet
             }
         }
 
 
-
-
+      
         // Recombine the bands into the final output
         buffer.makeCopyOf(lowBandBuffer);
         buffer.addFrom(0, 0, midBandBuffer, 0, 0, buffer.getNumSamples());
