@@ -68,4 +68,5 @@ private:
     juce::dsp::Compressor<float> preDistortionCompressor;
     juce::dsp::Compressor<float> postDistortionCompressor;
     juce::dsp::Gain<float> inputGain;
+    juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> lowShelfFilter;
 };

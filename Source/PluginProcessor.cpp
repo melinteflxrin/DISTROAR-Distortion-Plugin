@@ -138,6 +138,15 @@ void DISTROARAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     inputGain.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), 2 });
     inputGain.setGainDecibels(15.0f); // Apply a fixed gain boost
 
+    // Prepare low shelf filter
+    lowShelfFilter.prepare({ sampleRate, static_cast<juce::uint32>(samplesPerBlock), static_cast<juce::uint32>(getTotalNumOutputChannels()) });
+
+    auto lowShelfCoefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf(
+        sampleRate, 100.0f, 0.707f, juce::Decibels::decibelsToGain(-10.0f)
+    );
+
+    *lowShelfFilter.state = *lowShelfCoefficients;
+
 }
 
 void DISTROARAudioProcessor::releaseResources()
@@ -191,6 +200,11 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         juce::dsp::AudioBlock<float> gainBlock(buffer);
         juce::dsp::ProcessContextReplacing<float> gainContext(gainBlock);
         inputGain.process(gainContext);
+
+        // Apply low shelf filter
+        juce::dsp::AudioBlock<float> block(buffer);
+        juce::dsp::ProcessContextReplacing<float> context(block);
+        lowShelfFilter.process(context);
 
         // Apply gate effect before distortion
         float gateThreshold = juce::Decibels::decibelsToGain(gateParameter->get());
@@ -253,46 +267,46 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
             for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
             {
-                float drive = *driveParameter * 6.2f; // Slightly more refined drive
+                float drive = *driveParameter * 6.2f;
                 float inputSample = originalData[sample];
 
-                // Adaptive Gain Compensation for Sustain & Clarity
+                // Adaptive Gain Compensation for Sustain
                 float inputGainComp = 1.0f + (0.22f / (0.12f + std::abs(inputSample)));
                 float adaptiveDrive = drive * inputGainComp;
 
-                // LOW BAND - Keep it Tight, No Boom
+                // LOW BAND
                 float lowSample = lowBandData[sample] * (1.0f + adaptiveDrive * 0.4f);
-                lowSample = juce::jlimit<float>(-0.32f, 0.32f, lowSample); // Further reduced excess low-end
-                lowSample = (lowSample > 0.0f ? std::pow(lowSample, 0.65f) : -std::pow(-lowSample, 0.65f)); // More control
+                lowSample = juce::jlimit<float>(-0.32f, 0.32f, lowSample); // reduce excess low-end
+                lowSample = (lowSample > 0.0f ? std::pow(lowSample, 0.65f) : -std::pow(-lowSample, 0.65f));
                 lowSample *= 1.04f;
 
-                // MID BAND - Aggressive, Cutting, and Clean
+                // MID BAND
                 float midSample = midBandData[sample] * (1.0f + adaptiveDrive * 1.15f);
                 midSample = juce::jlimit<float>(-0.32f, 0.32f, midSample);
-                midSample = (midSample > 0.0f ? std::pow(midSample, 1.25f) : -std::pow(-midSample, 1.25f)); // More articulation
+                midSample = (midSample > 0.0f ? std::pow(midSample, 1.25f) : -std::pow(-midSample, 1.25f));
                 midSample *= 1.18f;
 
-                // HIGH BAND - Reduce Fizz, Keep Attack
-                float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 0.3f); // Lowered drive in high end
+                // HIGH BAND
+                float highSample = highBandData[sample] * (1.0f + adaptiveDrive * 0.3f); // Lower drive in high end
                 highSample = juce::jlimit<float>(-0.18f, 0.18f, highSample); // Reduce harsh high peaks
                 highSample = (highSample > 0.0f ? std::pow(highSample, 1.2f) : -std::pow(-highSample, 1.2f)); // Softer clipping for smoothness
-                highSample *= 0.88f; // Slight roll-off to further control fizz
+                highSample *= 0.88f; // Slight roll-off to control fizz
 
-                // Dynamic Control - Keeps It Punchy & Tight
+                // Dynamic Control
                 float dynamicSmoothing = 1.0f / (1.0f + std::abs(lowSample * 0.2f + midSample * 0.28f + highSample * 0.15f));
                 lowSample *= dynamicSmoothing * 1.05f;
                 midSample *= dynamicSmoothing * 1.08f;
                 highSample *= dynamicSmoothing * 1.03f;
 
-                // Hard Clipping for Controlled Aggression
-                float finalSample = (lowSample * 0.85f) + (midSample * 1.2f) + (highSample * 0.98f); // Reduced high band contribution
+                // Hard Clipping
+                float finalSample = (lowSample * 0.85f) + (midSample * 1.2f) + (highSample * 0.98f); // Reduced high band
                 finalSample = juce::jlimit<float>(-0.7f, 0.7f, finalSample);
-                finalSample = finalSample > 0.0f ? std::pow(finalSample, 0.8f) : -std::pow(-finalSample, 0.8f); // Even smoother distortion
+                finalSample = finalSample > 0.0f ? std::pow(finalSample, 0.8f) : -std::pow(-finalSample, 0.8f); // smoother distortion
 
-                // FINAL EQ - Less Fizz, Tighter Highs
+                // FINAL EQ
                 float cabSim = juce::dsp::IIR::Coefficients<float>::makeHighPass(44100, 95) // Cut sub-bass
                     ->getMagnitudeForFrequency(95, 44100) * finalSample;
-                cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 6500) // Lowered to remove more fizz
+                cabSim = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100, 6500) // Lower to remove more fizz
                     ->getMagnitudeForFrequency(6500, 44100) * cabSim;
                 cabSim = juce::jlimit<float>(-0.65f, 0.65f, cabSim);
                 cabSim *= 1.02f; // Keep definition
@@ -308,9 +322,6 @@ void DISTROARAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
 
 
-
-
-      
         // Recombine the bands into the final output
         buffer.makeCopyOf(lowBandBuffer);
         buffer.addFrom(0, 0, midBandBuffer, 0, 0, buffer.getNumSamples());
