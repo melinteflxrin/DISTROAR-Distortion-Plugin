@@ -129,28 +129,34 @@ void DISTROARAudioProcessorEditor::paint(juce::Graphics& g)
 
 void DISTROARAudioProcessorEditor::resized()
 {
-    int sliderWidth = 100;
-    int sliderHeight = 100;
-    int labelHeight = 20;
-    int padding = 10;
+    int bigKnobSize = 120;  
+    int smallKnobSize = 80; 
+    
+    // Big Knobs (Volume & Drive)
+    volumeSlider.setBounds(10, 20, bigKnobSize, bigKnobSize);
+    ////volumeLabel.setBounds(centerX - bigKnobSpacing - bigKnobSize / 2, topY + bigKnobSize, bigKnobSize, labelHeight);
 
-    volumeSlider.setBounds(padding, padding, sliderWidth, sliderHeight);
-    volumeLabel.setBounds(padding, padding + sliderHeight, sliderWidth, labelHeight);
+    distortionSlider.setBounds(300-10-bigKnobSize, 20, bigKnobSize, bigKnobSize);
+    //distortionLabel.setBounds(centerX + bigKnobSpacing - bigKnobSize / 2, topY + bigKnobSize, bigKnobSize, labelHeight);
 
-    distortionSlider.setBounds(padding + sliderWidth + padding, padding, sliderWidth, sliderHeight);
-    distortionLabel.setBounds(padding + sliderWidth + padding, padding + sliderHeight, sliderWidth, labelHeight);
 
-    blendSlider.setBounds(padding, padding + sliderHeight + labelHeight + padding, sliderWidth, sliderHeight);
-    blendLabel.setBounds(padding, padding + 2 * (sliderHeight + labelHeight) + padding, sliderWidth, labelHeight);
+    // Small Knobs (Gate, Blend & Tone)
+    gateSlider.setBounds(20, 160, smallKnobSize, smallKnobSize);
+    //gateLabel.setBounds(centerX - smallKnobSpacing, bottomY + smallKnobSize, smallKnobSize, labelHeight);
 
-    toneSlider.setBounds(padding + sliderWidth + padding, padding + sliderHeight + labelHeight + padding, sliderWidth, sliderHeight);
-    toneLabel.setBounds(padding + sliderWidth + padding, padding + 2 * (sliderHeight + labelHeight) + padding, sliderWidth, labelHeight);
+    blendSlider.setBounds(110, 160, smallKnobSize, smallKnobSize);
+    //blendLabel.setBounds(centerX - smallKnobSize / 2, bottomY + smallKnobSize, smallKnobSize, labelHeight);
 
-    gateSlider.setBounds(padding, padding + 2 * (sliderHeight + labelHeight) + 2 * padding, sliderWidth, sliderHeight);
-    gateLabel.setBounds(padding, padding + 3 * (sliderHeight + labelHeight) + 2 * padding, sliderWidth, labelHeight);
+    toneSlider.setBounds(200, 160, smallKnobSize, smallKnobSize);
+    //toneLabel.setBounds(centerX + smallKnobSpacing - smallKnobSize, bottomY + smallKnobSize, smallKnobSize, labelHeight);
 
-    toggleButton.setBounds(padding + sliderWidth + padding, padding + 2 * (sliderHeight + labelHeight) + 2 * padding, 100, 100);
+
+    //On/Off Switch
+    toggleButton.setBounds(100, 450-20-100, 100, 100);
 }
+
+
+
 
 void DISTROARAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
