@@ -8,7 +8,7 @@
 
 ## Description
 
-**DISTROAR** is a gritty, heavy distortion plugin I made to get a raw, aggressive sound from my electric guitar, perfect for chugs, riffs and leads. Built in C++ with JUCE, and runs as a VST3 in any DAW.
+**DISTROAR** is a gritty, heavy distortion plugin I made to get a punchy, aggressive sound from my electric guitar, perfect for chugs, riffs and leads. It's my first plugin, built in C++ with JUCE, and runs as a VST3 in any DAW.
 
 ## Features
 - Multi-band distortion: splits the signal into low, mid, and high bands for separate processing
