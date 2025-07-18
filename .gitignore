@@ -374,5 +374,3 @@ Builds/
 *.rtas/
 *.aaxplugin/
 
-# Resources folder containing all PNGs and artwork
-Resources/
