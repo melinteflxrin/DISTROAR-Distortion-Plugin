@@ -25,7 +25,7 @@
 - **Gate**: reduce noise by removing low-level signals before and after distortion
 
 ## Download
-1. Download the latest `DISTROAR.vst3` or `DISTROAR.dll` file from [Releases](https://github.com/melinteflxrin/DISTROAR-Distortion-Plugin/releases)
+1. Download the latest `DISTROAR.vst3` file from [Releases](https://github.com/melinteflxrin/DISTROAR-Distortion-Plugin/releases)
 2. Copy the file to your DAW's VST3 plugin folder:
    - **Windows:** `C:/Program Files/Common Files/VST3/`
    - **macOS:** `/Library/Audio/Plug-Ins/VST3/`
