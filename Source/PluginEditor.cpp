@@ -7,7 +7,9 @@ DISTROARAudioProcessorEditor::DISTROARAudioProcessorEditor(DISTROARAudioProcesso
     : AudioProcessorEditor(&p), audioProcessor(p), effectEnabled(true) // Initialize effectEnabled
 {
     // Load background image
-    backgroundImage = juce::ImageCache::getFromMemory(BinaryData::distroarBackground_png, BinaryData::distroarBackground_pngSize);
+    backgroundImage = juce::ImageCache::getFromMemory(BinaryData::distroarBackground_png, BinaryData::distroarBackground_pngSize)
+        .rescaled(300, 450, juce::Graphics::highResamplingQuality);
+
 
     // Load images for the button states
     buttonOnImage = juce::ImageFileFormat::loadFrom(BinaryData::distroarON_png, BinaryData::distroarON_pngSize);
@@ -152,7 +154,7 @@ void DISTROARAudioProcessorEditor::resized()
 
 
     //On/Off Switch
-    toggleButton.setBounds(100, 450-20-100, 100, 100);
+    toggleButton.setBounds(90, 270, 120, 180);
 }
 
 
