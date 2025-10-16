@@ -1,5 +1,7 @@
 # DISTROAR
 
+![DISTROAR Plugin](Assets/DISTROAR-screenshot.png)
+
 ## Table of Contents
 - [Description](#description)
 - [Features](#features)
