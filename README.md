@@ -7,6 +7,7 @@
 - [Features](#features)
 - [Knobs](#knobs)
 - [Download](#download)
+- [Demo Video](#demo-video)
 
 ## Description
 
@@ -32,3 +33,6 @@
    - **Windows:** `C:/Program Files/Common Files/VST3/`
    - **macOS:** `/Library/Audio/Plug-Ins/VST3/`
 3. Open your DAW and rescan plugins
+
+## Demo Video
+https://www.youtube.com/watch?v=OO53SPpXtbE<br>
